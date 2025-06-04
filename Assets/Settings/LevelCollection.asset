@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 071884d344e94286b5eaa760ae83572a, type: 3}
+  m_Name: LevelCollection
+  m_EditorClassIdentifier: 
+  levels:
+  - busData: {fileID: 11400000, guid: 621ea81fe3462374f9a75a39e7bcc365, type: 2}
+    SmallBusCount: 0
+    MediumBusCount: 0
+    LargeBusCount: 0
+    ColorsCount: 4
+  - busData: {fileID: 11400000, guid: 6d7771836a909aa4ab567e1da1ba1cc0, type: 2}
+    SmallBusCount: 0
+    MediumBusCount: 0
+    LargeBusCount: 0
+    ColorsCount: 5
+  - busData: {fileID: 11400000, guid: b10a27ed8b768664a990167fce5dbd88, type: 2}
+    SmallBusCount: 0
+    MediumBusCount: 0
+    LargeBusCount: 0
+    ColorsCount: 6
+  - busData: {fileID: 11400000, guid: 04f233629ef013f439ebfeceaca22e2d, type: 2}
+    SmallBusCount: 0
+    MediumBusCount: 0
+    LargeBusCount: 0
+    ColorsCount: 6
+  - busData: {fileID: 0}
+    SmallBusCount: 17
+    MediumBusCount: 17
+    LargeBusCount: 12
+    ColorsCount: 7
+  - busData: {fileID: 0}
+    SmallBusCount: 18
+    MediumBusCount: 18
+    LargeBusCount: 15
+    ColorsCount: 7
+  - busData: {fileID: 11400000, guid: 6d2f05b23100dd246aa9612d0dc7624d, type: 2}
+    SmallBusCount: 0
+    MediumBusCount: 0
+    LargeBusCount: 0
+    ColorsCount: 8
+  - busData: {fileID: 0}
+    SmallBusCount: 22
+    MediumBusCount: 20
+    LargeBusCount: 17
+    ColorsCount: 8
+  - busData: {fileID: 11400000, guid: 898944ea8bff59a46ab46c388cfaed34, type: 2}
+    SmallBusCount: 0
+    MediumBusCount: 0
+    LargeBusCount: 0
+    ColorsCount: 8
+  - busData: {fileID: 0}
+    SmallBusCount: 24
+    MediumBusCount: 24
+    LargeBusCount: 20
+    ColorsCount: 8

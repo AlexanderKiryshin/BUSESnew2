@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 106ea5ad14b048739e22218449c843dd
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - smallBusPrefab: {fileID: 7230713151610502074, guid: ecfc14c54c7ea7d45beeb0651add415c, type: 3}
+  - mediumBusPrefab: {fileID: 1970275573406453448, guid: 1cae5c3902f037c45ba1e57001d0640d, type: 3}
+  - largeBusPrefab: {fileID: 4882079402944659365, guid: b615b3a1c60ad9142b798c6c9e49491a, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

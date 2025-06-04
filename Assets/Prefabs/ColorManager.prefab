@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7231047702230228875
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1655816980711472434}
+  - component: {fileID: 5661679405706508082}
+  m_Layer: 0
+  m_Name: ColorManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1655816980711472434
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7231047702230228875}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5661679405706508082
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7231047702230228875}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c79864d109ef4e25b4921dc6502dabbf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _followPath: {fileID: 0}
+  NumberOfColors: 8
+  ZoneMixPercentage: 10
+  GeneratedColors:
+  - {fileID: 2100000, guid: 19b4730b259673e4081e8e28e58addb5, type: 2}
+  - {fileID: 2100000, guid: b7b1da50f8d297546bb994fd54e37915, type: 2}
+  - {fileID: 2100000, guid: 00e80d9bc7f7ed5419ab4495518dbee3, type: 2}
+  - {fileID: 2100000, guid: e9ecaca23212bba488ebf2d7631acd7b, type: 2}
+  - {fileID: 2100000, guid: 8ab9ecf8875245e42b4e7ba82b90964b, type: 2}
+  - {fileID: 2100000, guid: 965bc916a9ae54a4681b5f74cc1dbd22, type: 2}
+  - {fileID: 2100000, guid: 8a90a0e0f32d71a4b86acdc692ae1c0d, type: 2}
+  - {fileID: 2100000, guid: a02b36ab740ca09429b79a05894d53a4, type: 2}
+  BusSequence: []
+  ColorSequencePerson: []

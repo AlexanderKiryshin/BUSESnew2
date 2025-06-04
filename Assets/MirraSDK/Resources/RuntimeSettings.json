@@ -1,0 +1,7 @@
+{
+    "platformName": "Y8",
+    "deploymentName": "Web",
+    "dataContainerTags": [
+        "json-data"
+    ]
+}
