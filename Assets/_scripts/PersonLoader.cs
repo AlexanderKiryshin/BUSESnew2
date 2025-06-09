@@ -29,7 +29,7 @@ public class PersonLoader : MonoBehaviour
 
                 if (_personInZone == null)
                     return;
-                if (bus.Color == _personInZone.Color)
+                if (bus.ColorType == _personInZone.ColorType)
                 {
                     _path.UpdatePersonsLeftCount();
                     bus.TakePerson(_personInZone);

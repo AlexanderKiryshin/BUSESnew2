@@ -1,3 +1,4 @@
+using Assets._scripts;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -24,7 +25,7 @@ public class FollowPath : MonoBehaviour
     [SerializeField] private float _spawnCheckRadius = 0.5f;
     [SerializeField] private LayerMask _layerMask;
     [SerializeField] private TMP_Text _personsLeftText;
-    [SerializeField] private List<Material> _colorSequence;
+    [SerializeField] private List<ColorData> _colorSequence;
 
     public event Action<int> PersonsLeftChanged;
 
@@ -37,7 +38,7 @@ public class FollowPath : MonoBehaviour
 
     public void Initialize()
     {
-        _colorSequence = new List<Material>(_colorManager.ColorSequencePerson);
+        _colorSequence = new List<ColorData>(_colorManager.ColorSequencePerson);
         CalcualtePersonsCount();
         StartCoroutine(CreatePersonsCoroutine());
         StartCoroutine(MoveAlongPath());
@@ -226,7 +227,7 @@ public class FollowPath : MonoBehaviour
         }
     }
 
-    private void AssignColorToPerson(Person person, List<Material> colorSequence)
+    private void AssignColorToPerson(Person person, List<ColorData> colorSequence)
     {
         // if (_personIndex < 0 || _personIndex >= colorSequence.Count)
         // {
@@ -238,8 +239,9 @@ public class FollowPath : MonoBehaviour
         var color = colorSequence[0];
 
 
-        person.Color = color;
-        person.meshRenderer.material = color;
+        person.Color = color.peopleColor;
+        person.ColorType = color.colorType;
+        person.meshRenderer.material = color.peopleColor;
         _personIndex++;
         colorSequence.RemoveAt(0);
     }
@@ -318,7 +320,11 @@ public class FollowPath : MonoBehaviour
 
         List<Material> allColors = new List<Material>();
         allColors.AddRange(personsList.Select(person => person.Color));
-        allColors.AddRange(_colorSequence);
+        foreach (var color in _colorSequence)
+        {
+            allColors.Add(color.peopleColor);
+        }
+        //allColors.AddRange(_colorSequence);
 
         foreach (var color in busMaterials)
         {
@@ -341,7 +347,7 @@ public class FollowPath : MonoBehaviour
             }
             else if (i - personCount < _colorSequence.Count)
             {
-                _colorSequence[i - personCount] = reorderedColors[i];
+                _colorSequence[i - personCount].peopleColor = reorderedColors[i];
             }
         }
     }

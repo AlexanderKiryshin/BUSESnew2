@@ -1,6 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using _scripts.UI;
+using Assets._scripts;
+using MirraGames.SDK;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -18,10 +21,12 @@ public class Bus : MonoBehaviour, IRaycastTarget
     public int Capacity;
     public int PersonsInside = 0;
     private Material _color;
-    public MeshRenderer meshRendererBody , meshRendererTop;
+    public MeshRenderer meshRendererBody; 
+    public GameObject arrow;
     public bool IsWayClear;
     public BusType Type;
     public bool _BusHided = false;
+    public static Action<int> onScoreChanged;
     
     [SerializeField] private Transform[] _passangerPoints;
     [SerializeField] private Animator _animator;
@@ -48,7 +53,7 @@ public class Bus : MonoBehaviour, IRaycastTarget
     private Rigidbody _rigidbody;
     private bool _isClickable = true;
     public bool isVip = false;
-
+    public ColorType ColorType;
     public Material Color
     {
         get => _color;
@@ -56,7 +61,6 @@ public class Bus : MonoBehaviour, IRaycastTarget
         {
             _color = value;
             meshRendererBody.material = _color;
-            meshRendererTop.material = _color;
         }
     }
     
@@ -159,6 +163,21 @@ public class Bus : MonoBehaviour, IRaycastTarget
         _fogEffect.SetActive(true);
         _isGoAway = true;
         _navAgent.enabled = true;
+        int score = 0;
+        switch(Type)
+        {
+            case BusType.Small:
+                score = 4;
+                break;
+            case BusType.Medium:
+                score = 6;
+                break;
+            case BusType.Large:
+                score = 8;
+                break;
+        }
+        MirraSDK.Achievements.SetScore("score", score);
+        onScoreChanged?.Invoke(score);
         StartCoroutine(FollowPath(path));
     }
 
@@ -279,8 +298,7 @@ public class Bus : MonoBehaviour, IRaycastTarget
     private void CompleteParking()
     {
         _busGenerator.RemoveBusFromZones(this);
-        meshRendererBody.gameObject.SetActive(false);
-        meshRendererTop.gameObject.SetActive(true);
+        arrow.SetActive(false);
         _navAgent.enabled = false;
         transform.position = _targetSpot.transform.position;
         transform.rotation = _targetSpot.transform.rotation;
@@ -333,8 +351,7 @@ public class Bus : MonoBehaviour, IRaycastTarget
     {
         _isClickable = false;
         _busGenerator.RemoveBusFromZones(this);
-        meshRendererBody.gameObject.SetActive(false);
-        meshRendererTop.gameObject.SetActive(true);
+        arrow.SetActive(false);
         _navAgent.enabled = false;
         _parkingManager.BusFlightArrived(this);
         isVip = true;
@@ -358,7 +375,7 @@ public class Bus : MonoBehaviour, IRaycastTarget
         meshRendererBody.material = _color;
     }
 
-    private void CheckExit(Material arg1, bool arg2)
+    private void CheckExit(ColorType arg1, bool arg2)
     {
         CheckWay();
         if (IsWayClear)

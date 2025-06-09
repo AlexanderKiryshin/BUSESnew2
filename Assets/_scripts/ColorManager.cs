@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using MirraGames.SDK;
 using MirraGames.SDK.Common;
+using Assets._scripts;
 
 public enum Difficulty
 {
@@ -22,13 +23,13 @@ public class ColorManager : MonoBehaviour
     [Range(1, 8)] public int NumberOfColors = 8;
     [Range(5, 100)] public int ZoneMixPercentage = 10;
 
-    public List<Material> GeneratedColors;
+    public List<ColorData> GeneratedColors;
     public List<Bus> BusSequence;
-    public List<Material> ColorSequencePerson;
+    public List<ColorData> ColorSequencePerson;
 
-    private List<Material> _firstZoneColors;
-    private List<Material> _secondZoneColors;
-    private List<Material> _thirdZoneColors;
+    private List<ColorData> _firstZoneColors;
+    private List<ColorData> _secondZoneColors;
+    private List<ColorData> _thirdZoneColors;
     private BusGenerator _busGenerator;
     private int _randomDelimeter;
 
@@ -106,19 +107,19 @@ public class ColorManager : MonoBehaviour
         return zoneColors;
     }
 
-    private void AssignBusColors(List<Bus> buses, List<Material> zoneColors)
+    private void AssignBusColors(List<Bus> buses, List<ColorData> zoneColors)
     {
         foreach (var bus in buses)
         {
             // Выбираем случайный цвет из доступных цветов зоны
             int colorIndexInZone = Random.Range(0, zoneColors.Count);
-            Material selectedColor = zoneColors[colorIndexInZone];
+            ColorData selectedColor = zoneColors[colorIndexInZone];
 
-            bus.Color = selectedColor;
+            bus.Color = selectedColor.GetColor(bus.Type);
+            bus.ColorType=selectedColor.colorType;
             // bus.meshRendererBody.materials[0].color = selectedColor;
             // bus.meshRendererTop.materials[0].color = selectedColor;
-            bus.meshRendererBody.material = selectedColor;
-            bus.meshRendererTop.material = selectedColor;
+            bus.meshRendererBody.material = selectedColor.GetColor(bus.Type);
             // switch (bus.Type)
             // {
             //     case BusType.Small:
@@ -168,9 +169,9 @@ public class ColorManager : MonoBehaviour
         return sequence;
     }
 
-    private List<Material> GenerateColorSequenceForPeopleHard(List<Bus> buses, int randomDelimeter)
+    private List<ColorData> GenerateColorSequenceForPeopleHard(List<Bus> buses, int randomDelimeter)
     {
-        var colorSequence = new List<Material>();
+        var colorSequence = new List<ColorData>();
 
         if (buses.Count < 2 || randomDelimeter <= 0)
             return colorSequence;
@@ -193,22 +194,40 @@ public class ColorManager : MonoBehaviour
                 int next2BusRemainder = next2Bus.Capacity - next2BusPart;
 
                 for (int i = 0; i < currentBusPart; i++)
-                    colorSequence.Add(currentBus.Color);
+                {
+                    var color = GeneratedColors.Where(color => color.GetColor(currentBus.Type) == currentBus.Color).First<ColorData>();
+                    colorSequence.Add(new ColorData(color.colorType,currentBus.Type, currentBus.Color, color.peopleColor));
+                }
 
                 for (int i = 0; i < nextBusPart; i++)
-                    colorSequence.Add(nextBus.Color);
+                {
+                    var color = GeneratedColors.Where(color => color.GetColor(nextBus.Type) == nextBus.Color).First<ColorData>();
+                    colorSequence.Add(new ColorData(color.colorType, currentBus.Type, nextBus.Color, color.peopleColor));
+                }
 
                 for (int i = 0; i < next2BusPart; i++)
-                    colorSequence.Add(next2Bus.Color);
+                {
+                    var color = GeneratedColors.Where(color => color.GetColor(next2Bus.Type) == next2Bus.Color).First<ColorData>();
+                    colorSequence.Add(new ColorData(color.colorType, currentBus.Type, next2Bus.Color, color.peopleColor));
+                }
 
                 for (int i = 0; i < currentBusRemainder; i++)
-                    colorSequence.Add(currentBus.Color);
+                {
+                    var color = GeneratedColors.Where(color => color.GetColor(currentBus.Type) == currentBus.Color).First<ColorData>();
+                    colorSequence.Add(new ColorData(color.colorType, currentBus.Type, currentBus.Color, color.peopleColor));
+                }
 
                 for (int i = 0; i < nextBusRemainder; i++)
-                    colorSequence.Add(nextBus.Color);
+                {
+                    var color = GeneratedColors.Where(color => color.GetColor(nextBus.Type) == nextBus.Color).First<ColorData>();
+                    colorSequence.Add(new ColorData(color.colorType, currentBus.Type, nextBus.Color, color.peopleColor));
+                }
 
                 for (int i = 0; i < next2BusRemainder; i++)
-                    colorSequence.Add(next2Bus.Color);
+                {
+                    var color = GeneratedColors.Where(color => color.GetColor(next2Bus.Type) == next2Bus.Color).First<ColorData>();
+                    colorSequence.Add(new ColorData(color.colorType, currentBus.Type, next2Bus.Color, color.peopleColor));
+                }
 
                 j += 2;
             }
@@ -222,16 +241,28 @@ public class ColorManager : MonoBehaviour
                 int nextBusRemainder = nextBus.Capacity - nextBusPart;
 
                 for (int i = 0; i < currentBusPart; i++)
-                    colorSequence.Add(currentBus.Color);
+                {
+                    var color = GeneratedColors.Where(color => color.GetColor(currentBus.Type) == currentBus.Color).First<ColorData>();
+                    colorSequence.Add(new ColorData(color.colorType, currentBus.Type, currentBus.Color, color.peopleColor));
+                }
 
                 for (int i = 0; i < nextBusPart; i++)
-                    colorSequence.Add(nextBus.Color);
+                {
+                    var color = GeneratedColors.Where(color => color.GetColor(nextBus.Type) == nextBus.Color).First<ColorData>();
+                    colorSequence.Add(new ColorData(color.colorType, nextBus.Type, nextBus.Color, color.peopleColor));
+                }
 
                 for (int i = 0; i < currentBusRemainder; i++)
-                    colorSequence.Add(currentBus.Color);
+                {
+                    var color = GeneratedColors.Where(color => color.GetColor(currentBus.Type) == currentBus.Color).First<ColorData>();
+                    colorSequence.Add(new ColorData(color.colorType, currentBus.Type, currentBus.Color, color.peopleColor));
+                }
 
                 for (int i = 0; i < nextBusRemainder; i++)
-                    colorSequence.Add(nextBus.Color);
+                {
+                    var color = GeneratedColors.Where(color => color.GetColor(nextBus.Type) == nextBus.Color).First<ColorData>();
+                    colorSequence.Add(new ColorData(color.colorType, nextBus.Type, nextBus.Color, color.peopleColor));
+                }
 
                 j++;
             }
@@ -239,7 +270,8 @@ public class ColorManager : MonoBehaviour
             {
                 for (int i = 0; i < buses[i].Capacity; i++)
                 {
-                    colorSequence.Add(buses[i].Color);
+                    var color = GeneratedColors.Where(color => color.GetColor(buses[i].Type) == buses[i].Color).First<ColorData>();
+                    colorSequence.Add((new ColorData(color.colorType, buses[i].Type, buses[i].Color, color.peopleColor)));
                 }
             }
         }
@@ -247,15 +279,16 @@ public class ColorManager : MonoBehaviour
         var lastBus = buses[^1];
         for (int i = 0; i < lastBus.Capacity; i++)
         {
-            colorSequence.Add(lastBus.Color);
+            var color = GeneratedColors.Where(color => color.GetColor(lastBus.Type) == lastBus.Color).First<ColorData>();
+            colorSequence.Add(new ColorData(color.colorType, lastBus.Type, lastBus.Color, color.peopleColor));
         }
 
         return colorSequence;
     }
 
-    private List<Material> GenerateColorSequenceForPeopleEase(List<Bus> buses, int randomDelimeter)
+    private List<ColorData> GenerateColorSequenceForPeopleEase(List<Bus> buses, int randomDelimeter)
     {
-        var colorSequence = new List<Material>();
+        var colorSequence = new List<ColorData>();
 
         if (buses.Count < 2 || randomDelimeter <= 0)
             return colorSequence;
@@ -266,7 +299,10 @@ public class ColorManager : MonoBehaviour
             if (j == 0)
             {
                 for (int i = 0; i < buses[j].Capacity; i++)
-                    colorSequence.Add(currentBus.Color);
+                {
+                    var color = GeneratedColors.Where(color => color.GetColor(currentBus.Type) == currentBus.Color).First<ColorData>();
+                    colorSequence.Add(new ColorData(color.colorType,currentBus.Type, currentBus.Color,color.peopleColor));
+                }
             }
             else if (j + 1 < buses.Count)
             {
@@ -278,16 +314,28 @@ public class ColorManager : MonoBehaviour
                 int nextBusRemainder = nextBus.Capacity - nextBusPart;
 
                 for (int i = 0; i < currentBusPart; i++)
-                    colorSequence.Add(currentBus.Color);
+                {
+                    var color = GeneratedColors.Where(color => color.GetColor(currentBus.Type) == currentBus.Color).First<ColorData>();
+                    colorSequence.Add(new ColorData(color.colorType,currentBus.Type, currentBus.Color, color.peopleColor));
+                }
 
                 for (int i = 0; i < nextBusPart; i++)
-                    colorSequence.Add(nextBus.Color);
+                {
+                    var color = GeneratedColors.Where(color => color.GetColor(nextBus.Type) == nextBus.Color).First<ColorData>();
+                    colorSequence.Add(new ColorData(color.colorType,nextBus.Type, nextBus.Color, color.peopleColor));
+                }
 
                 for (int i = 0; i < currentBusRemainder; i++)
-                    colorSequence.Add(currentBus.Color);
+                {
+                    var color = GeneratedColors.Where(color => color.GetColor(currentBus.Type) == currentBus.Color).First<ColorData>();
+                    colorSequence.Add(new ColorData(color.colorType,currentBus.Type, currentBus.Color, color.peopleColor));
+                }
 
                 for (int i = 0; i < nextBusRemainder; i++)
-                    colorSequence.Add(nextBus.Color);
+                {
+                    var color = GeneratedColors.Where(color => color.GetColor(nextBus.Type) == nextBus.Color).First<ColorData>();
+                    colorSequence.Add(new ColorData(color.colorType,nextBus.Type, nextBus.Color, color.peopleColor));
+                }
 
                 j++;
             }
@@ -295,7 +343,8 @@ public class ColorManager : MonoBehaviour
             {
                 for (int i = 0; i < buses[i].Capacity; i++)
                 {
-                    colorSequence.Add(buses[i].Color);
+                    var color = GeneratedColors.Where(color => color.GetColor(buses[i].Type) == buses[i].Color).First<ColorData>();
+                    colorSequence.Add(new ColorData(color.colorType,buses[i].Type, buses[i].Color, color.peopleColor));
                 }
             }
         }
@@ -303,7 +352,8 @@ public class ColorManager : MonoBehaviour
         var lastBus = buses[^1];
         for (int i = 0; i < lastBus.Capacity; i++)
         {
-            colorSequence.Add(lastBus.Color);
+            var color = GeneratedColors.Where(color => color.GetColor(lastBus.Type) == lastBus.Color).First<ColorData>();
+            colorSequence.Add(new ColorData(color.colorType,lastBus.Type, lastBus.Color, color.peopleColor));
         }
 
         return colorSequence;

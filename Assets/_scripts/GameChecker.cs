@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Assets._scripts;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,11 +10,11 @@ public class GameChecker : MonoBehaviour
     [SerializeField] private PersonLoader _personLoader;
     [SerializeField] private ParkingManager _parkingManager;
     [SerializeField] private UiManager _uiManager;
-
+    [SerializeField] private int maxBuses = 7;
     private int _busLeftCount;
     private int _personLeftCount;
     private Person _firstPerson;
-    private List<Material> _busInSpotColors = new List<Material>();
+    private List<ColorType> _busInSpotColors = new List<ColorType>();
 
     public event Action WinGame;
     public event Action LoseGame;
@@ -45,7 +46,7 @@ public class GameChecker : MonoBehaviour
         Invoke(nameof(CheckLoseState), 0.25f);
     }
 
-    private void OnBusInSpotChanged(Material color, bool isArrived)
+    private void OnBusInSpotChanged(ColorType color, bool isArrived)
     {
         if (!isArrived)
         {
@@ -95,7 +96,7 @@ public class GameChecker : MonoBehaviour
             bool hasMatch = false;
             foreach (var color in _busInSpotColors)
             {
-                if (color == _firstPerson.Color)
+                if (color == _firstPerson.ColorType)
                 {
                     hasMatch = true;
                     break;
@@ -104,7 +105,6 @@ public class GameChecker : MonoBehaviour
 
             if (!hasMatch)
             {
-                int maxBuses = 7;
                 if (_parkingManager.IsBusInVipSpot)
                     maxBuses += 1;
                 if (_busInSpotColors.Count != maxBuses)

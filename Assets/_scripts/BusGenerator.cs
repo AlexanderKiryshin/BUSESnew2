@@ -5,6 +5,7 @@ using _scripts;
 using _scripts.Settings;
 using Random = UnityEngine.Random;
 using MirraGames.SDK;
+using Assets._scripts;
 
 public class BusGenerator : MonoBehaviour
 {
@@ -150,7 +151,6 @@ public class BusGenerator : MonoBehaviour
                     Quaternion.Euler(0, _rotationY, 0));
                 AllBuses.Add(bus);
                 bus.meshRendererBody.materials[0] = Materials[j];
-                bus.meshRendererTop.materials[0] = Materials[j];
                 CheckAndAdjustRotation(bus.transform);
                 switch (j)
                 {
@@ -417,8 +417,11 @@ public class BusGenerator : MonoBehaviour
     private void SwapBusColors(Bus bus1, Bus bus2)
     {
         Material tempColor = bus1.Color;
+        ColorType colorType = bus1.ColorType;
         bus1.Color = bus2.Color;
+        bus1.ColorType = bus2.ColorType;
         bus2.Color = tempColor;
+        bus2.ColorType = colorType;
     }
 
     public void RemoveBusFromZones(Bus bus)

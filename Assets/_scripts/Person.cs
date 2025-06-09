@@ -1,3 +1,4 @@
+using Assets._scripts;
 using System;
 using System.Collections;
 using UnityEngine;
@@ -13,12 +14,14 @@ public class Person : MonoBehaviour
     private Collider _collider;
     private PersonLoader _personLoader;
 
+
     private Material _color;
     private const string _isRunning = "isRunning";
     private Vector3 _previusPosition = Vector3.zero;
 
     private bool _isOnBus = false;
 
+    public ColorType ColorType;
     public Material Color
     {
         get => _color;

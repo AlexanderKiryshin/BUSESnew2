@@ -1,3 +1,4 @@
+using Assets._scripts;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,7 +16,7 @@ public class ParkingManager : MonoBehaviour
     public bool IsBusInVipSpot;
     private bool[] _isSpotesOccupied;
 
-    public event Action<Material, bool> BusInSpotChanged;
+    public event Action<ColorType, bool> BusInSpotChanged;
 
 
     private void Start()
@@ -87,14 +88,14 @@ public class ParkingManager : MonoBehaviour
     public void BusArrived(Bus bus)
     {
         BusesInSpot.Add(bus);
-        BusInSpotChanged?.Invoke(bus.Color, true);
+        BusInSpotChanged?.Invoke(bus.ColorType, true);
     }
 
     public void BusFlightArrived(Bus bus)
     {
         IsBusInVipSpot = true;
         BusesInSpot.Add(bus);
-        BusInSpotChanged?.Invoke(bus.Color, true);
+        BusInSpotChanged?.Invoke(bus.ColorType, true);
     }
 
     public void FreeSpot(Bus bus)
@@ -121,7 +122,7 @@ public class ParkingManager : MonoBehaviour
                 BusesInSpot.Remove(bus);
                 _isSpotesOccupied[i] = false;
                 
-                BusInSpotChanged?.Invoke(bus.Color, false);
+                BusInSpotChanged?.Invoke(bus.ColorType, false);
                 SoundManager.instance.PlayBusRuningSound();
                 break;
             }
@@ -137,7 +138,7 @@ public class ParkingManager : MonoBehaviour
         bus.LeaveParking(Path);
         BusesInSpot.Remove(bus);
         IsBusInVipSpot = false;
-        BusInSpotChanged?.Invoke(bus.Color, false);
+        BusInSpotChanged?.Invoke(bus.ColorType, false);
         SoundManager.instance.PlayBusRuningSound();
     }
 
