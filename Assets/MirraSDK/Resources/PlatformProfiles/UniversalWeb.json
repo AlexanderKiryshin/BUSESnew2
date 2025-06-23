@@ -96,5 +96,10 @@
     "ok": {
         "appId": "",
         "interstitialIntervalSeconds": 0.0
+    },
+    "logger": {
+        "enableTextMessages": true,
+        "enableWarningMessages": true,
+        "enableExceptionMessages": true
     }
 }

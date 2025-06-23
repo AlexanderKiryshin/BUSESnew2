@@ -700,6 +700,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   clusterType: 0
+  parentSceneObject: {fileID: 0}
   data:
     clusterOnLMIndex: 0
     clusterByLODLevel: 0
@@ -707,12 +708,42 @@ MonoBehaviour:
     cellSize: {x: 0, y: 0, z: 0}
     pieNumSegments: 4
     pieAxis: {x: 0, y: 1, z: 0}
+    ringSpacing: 100
+    combineSegmentsInInnermostRing: 0
     height: 1
     maxDistBetweenClusters: 1
     includeCellsWithOnlyOneRenderer: 1
   sourceObjectBounds:
     m_Center: {x: 1.5584283, y: 3.013612, z: -0.14703465}
     m_Extent: {x: 6.4490824, y: 3.6109753, z: 4.928567}
+  prefabOptions_outputFolder: 
+  prefabOptions_autoGeneratePrefabs: 0
+  prefabOptions_mergeOutputIntoSinglePrefab: 0
+  meshBakerSettingsAsset: {fileID: 0}
+  meshBakerSettings:
+    _renderType: 0
+    _outputOption: 0
+    _lightmapOption: 1
+    _doNorm: 1
+    _doTan: 1
+    _doCol: 0
+    _doUV: 1
+    _doUV3: 0
+    _doUV4: 0
+    _doUV5: 0
+    _doUV6: 0
+    _doUV7: 0
+    _doUV8: 0
+    _doBlendShapes: 0
+    _pivotLocationType: 0
+    _pivotLocation: {x: 0, y: 0, z: 0}
+    _clearBuffersAfterBake: 0
+    _optimizeAfterBake: 1
+    _uv2UnwrappingParamsHardAngle: 60
+    _uv2UnwrappingParamsPackMargin: 0.005
+    _smrNoExtraBonesWhenCombiningMeshRenderers: 0
+    _smrMergeBlendShapesWithSameNames: 0
+    _assignToMeshCustomizer: {fileID: 0}
 --- !u!114 &1008291009
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -738,9 +769,11 @@ MonoBehaviour:
   _fixOutOfBoundsUVs: 1
   _maxTilingBakeSize: 2048
   _packingAlgorithm: 1
+  _layerTexturePackerFastMesh: -1
   _meshBakerTexturePackerForcePowerOfTwo: 0
   _customShaderProperties: []
   _customShaderPropNames_Depricated: []
+  _resultType: 0
   _doMultiMaterial: 1
   _doMultiMaterialSplitAtlasesIfTooBig: 1
   _doMultiMaterialSplitAtlasesIfOBUVs: 1
@@ -774,6 +807,8 @@ MonoBehaviour:
     - {fileID: 2100000, guid: 69b5721e37860ab4199ddb2d6684c64b, type: 2}
     - {fileID: 2100000, guid: f0788963e7a9ac4418742439b8707317, type: 2}
     - {fileID: 2100000, guid: 6e3b019fd01df0e4a963f2f27a73745c, type: 2}
+  resultMaterialsTexArray: []
+  textureArrayOutputFormats: []
   objsToMesh:
   - {fileID: 281329121}
   - {fileID: 1233241657}
@@ -1292,16 +1327,19 @@ MonoBehaviour:
   clearBuffersAfterBake: 1
   bakeAssetsInPlaceFolderPath: 
   resultPrefab: {fileID: 0}
+  resultPrefabLeaveInstanceInSceneAfterBake: 0
+  parentSceneObject: {fileID: 0}
   _meshCombiner:
-    _LOG_LEVEL: 3
     _validationLevel: 2
     _name: MeshBaker-mesh
     _textureBakeResults: {fileID: 11400000, guid: 870db1c4bc2e92842bf9b9df6121c71a,
       type: 2}
     _resultSceneObject: {fileID: 719666759}
     _targetRenderer: {fileID: 582780428}
-    _renderType: 0
+    _LOG_LEVEL: 3
+    _settingsHolder: {fileID: 0}
     _outputOption: 0
+    _renderType: 0
     _lightmapOption: 1
     _doNorm: 1
     _doTan: 1
@@ -1309,11 +1347,20 @@ MonoBehaviour:
     _doUV: 1
     _doUV3: 0
     _doUV4: 0
+    _doUV5: 0
+    _doUV6: 0
+    _doUV7: 0
+    _doUV8: 0
     _doBlendShapes: 0
-    _recenterVertsToBoundsCenter: 0
+    _pivotLocationType: 0
+    _pivotLocation: {x: 0, y: 0, z: 0}
+    _clearBuffersAfterBake: 0
     _optimizeAfterBake: 1
-    uv2UnwrappingParamsHardAngle: 60
-    uv2UnwrappingParamsPackMargin: 0.005
+    _uv2UnwrappingParamsHardAngle: 60
+    _uv2UnwrappingParamsPackMargin: 0.005
+    _smrNoExtraBonesWhenCombiningMeshRenderers: 0
+    _smrMergeBlendShapesWithSameNames: 0
+    _assignToMeshCustomizer: {fileID: 0}
     objectsInCombinedMesh: []
     lightmapIndex: -1
     mbDynamicObjectsInCombinedMesh: []
@@ -1321,15 +1368,21 @@ MonoBehaviour:
     normals: []
     tangents: []
     uvs: []
+    uvsSliceIdx: []
     uv2s: []
     uv3s: []
     uv4s: []
+    uv5s: []
+    uv6s: []
+    uv7s: []
+    uv8s: []
     colors: []
     bindPoses: []
     bones: []
     blendShapes: []
     blendShapesInCombined: []
     submeshTris: []
+    _meshBirth: 0
     _mesh: {fileID: 65095096}
 --- !u!4 &2079121190
 Transform:

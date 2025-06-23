@@ -37,6 +37,8 @@ namespace DigitalOpus.MB.Core
         void ReplacePrefab(GameObject gameObject, string assetPath, MB_ReplacePrefabOption replacePrefabOptions);
 
         GameObject GetPrefabInstanceRoot(GameObject sceneInstance);
+
+        TextureImporterFormat Map_TextureFormat_2_TextureImporterFormat(TextureFormat texFormat, out bool success);
     }
 
     public class MBVersionEditor
@@ -108,6 +110,11 @@ namespace DigitalOpus.MB.Core
         public static GameObject GetPrefabInstanceRoot(GameObject sceneInstance)
         {
             return GetInstance().GetPrefabInstanceRoot(sceneInstance);
+        }
+
+        public static TextureImporterFormat Map_TextureFormat_2_TextureImporterFormat(TextureFormat texFormat, out bool success)
+        {
+            return GetInstance().Map_TextureFormat_2_TextureImporterFormat(texFormat, out success);
         }
     }
 }

@@ -56,7 +56,7 @@ public class CoinManager : MonoBehaviour
     {
         _coinsInPreviosLevel = _coins;
         _coins += _coinsOnComplete * 2;
-        Analytic.GoldChanged(MirraSDK.Data.GetInt("Level").ToString(), _coins);
+        Analytic.GoldChanged(MirraSDK.Data.GetInt("Level"), _coins);
         SaveCoins();
         SoundManager.instance.PlayAddCoinsSound();
         OnCoinsChanged?.Invoke(_coins);
@@ -65,7 +65,6 @@ public class CoinManager : MonoBehaviour
     private void AddCoins()
     {
         _coins += _oneCoinCost;
-        Analytic.GoldChanged(MirraSDK.Data.GetInt("Level").ToString(), _coins);
         SoundManager.instance.PlayAddCoinsSound();
         OnCoinsChanged?.Invoke(_coins);
     }
@@ -83,7 +82,7 @@ public class CoinManager : MonoBehaviour
     {
         _coinsInPreviosLevel = _coins;
         _coins += _coinsOnComplete;
-        Analytic.GoldChanged(MirraSDK.Data.GetInt("Level").ToString(), _coins);
+        Analytic.GoldChanged(MirraSDK.Data.GetInt("Level"), _coins);
         SaveCoins();
         SoundManager.instance.PlayAddCoinsSound();
         OnCoinsChanged?.Invoke(_coins);
@@ -94,7 +93,7 @@ public class CoinManager : MonoBehaviour
         if (value <= _coins)
         {
             _coins -= value;
-            Analytic.GoldChanged(MirraSDK.Data.GetInt("Level").ToString(), _coins);
+            Analytic.GoldChanged(MirraSDK.Data.GetInt("Level"), _coins);
             SaveCoins();
             OnCoinsChanged?.Invoke(_coins);
             return true;

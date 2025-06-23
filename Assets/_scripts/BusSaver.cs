@@ -5,9 +5,7 @@ using UnityEngine;
 namespace _scripts
 {
     public class BusSaver: MonoBehaviour
-    {
-        
-
+    {       
         public BusData busData;
         
 #if UNITY_EDITOR

@@ -1,4 +1,56 @@
 =================
+Version 3.32.0 Nov 3, 2020
+    Can handle skinned meshes with blend shapes but zero bones
+    Paths to project assets folders are now stored relative to the Assets folder
+    Fixed bug with BatchPrefabBaker Prefab Rows not being initialized to zero length for new bakers
+    Fixed bug with GroupBy Standard Rendering Mode so that it works with URP and HDRP
+    Updated instructions for Batch Prefab Baker
+    Added an optional field to MeshBaker & MultiMeshBaker 'Parent Scene Object' baked combined meshes will be children of this.
+    Bake Into Prefab improvements
+        Can leave instance in scene after bake
+        There is button for creating empty prefabs. This works with multi object editing.
+        Mesh Baker Grouper can set up bakers to "Bake Into Prefab"
+    Mesh Baker Grouper improvements
+        Added option to "Auto Generate Prefabs"
+        Added folder field where prefabs will live
+        If using this option then generated combined meshes will be prefabs
+
+=================
+Version 3.31.0 June 15, 2020
+    Better handling for linear color space projects.
+    Added TextureBlenderURP for the Universal Render Pipeline/Lit shader
+    Improved collecting texture properties from result material. Was using the Material
+    API which was bad because it remembers extra properties from old shaders if the shader
+    is switched. Now collect the texture properties using the Shader API instead.
+    Bug Fix: Fixed some bugs in the the Standard shader texture blenders.
+    Bug Fix: NRE when trying to use listShadersInScene and with split into groups.
+    Bug Fix: When trying to combine skinned mesh renderers that are not prefab instances,
+        bones would not always be copied correctly to the prefab. Fixed.
+    Bug Fixs For Texture Arrays:
+        Fixed error generated when trying to assign platform spcific texture formats
+        to the default platform.
+        Fixed errors when generating solid color textures in platform specific formats.
+        Fixed errors caused by linear color space textures.
+
+
+=================
+Version 3.30.3 May 6, 2020
+    No functional changes. The previous version included two packages of examples for the HDRP and URP pipelines. These increased the package size by 100 meg
+    This release switches those packages to include only Materials which reduces the increase to 2meg.
+
+=================
+Version 3.30.1 May 6, 2020
+    Fix compile error due to HDRP APIs not being properly shielded.
+
+=================
+Version 3.30.0 Apr 24, 2020
+    New feature, MeshRenderers can be baked with SkinnedMeshRenderers without the addition of new bones if the MeshRenderer is a child of a SkinnedMeshRenderer bone.
+    New feature, BlendShapes in different SkinnedMeshRenderers can be merged when combining if they have the same names. This is useful when baking different body parts.
+    New feature, New version of TexturePackerFast which works with HDRP, URP and Default pipelines.
+    Fix compile error due to API changes in Unity 2020
+    Change, Mesh Baker does not overwrite changes to the combined material for texture properties that do not exist in any of the source materials.
+
+=================
 Version 3.29.1 Feb 18, 2020
     Bug fix when updating a combined skinned mesh. Some bones that are unused should have been deleted that were not.
     Combined all the bone processing code into a class so it is easier to manage

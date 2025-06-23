@@ -88,13 +88,17 @@ namespace DigitalOpus.MB.MBEditor
             gc_outputOptoinsGUIContent = new GUIContent("Output"),
             gc_logLevelContent = new GUIContent("Log Level"),
             gc_openToolsWindowLabelContent = new GUIContent("Open Tools For Adding Objects", "Use these tools to find out what can be combined, discover problems with meshes, and quickly add objects."),
-
-
+            gc_parentSceneObject = new GUIContent("Parent Scene Object (Optional)", "Must be a scene object. If set, then combined meshes will be added as children of this GameObject in the hierarchy"),
+            gc_resultPrefabLeaveInstanceInSceneAfterBake = new GUIContent("Leave Instance In Scene After Bake", "If checked then an instance will be left in the scene after baking. Otherwise scene instance will be deleted after prefab is baked."),
             gc_objectsToCombineGUIContent = new GUIContent("Custom List Of Objects To Be Combined", "You can add objects here that were not on the list in the MB3_TextureBaker as long as they use a material that is in the Texture Bake Results"),
             gc_textureBakeResultsGUIContent = new GUIContent("Texture Bake Result", "When materials are combined a MB2_TextureBakeResult Asset is generated. Drag that Asset to this field to use the combined material."),
             gc_useTextureBakerObjsGUIContent = new GUIContent("Same As Texture Baker", "Build a combined mesh using using the same list of objects that generated the Combined Material"),
             gc_combinedMeshPrefabGUIContent = new GUIContent("Combined Mesh Prefab", "Create a new prefab asset an drag an empty game object to it. Drag the prefab asset to here."),
             gc_SortAlongAxis = new GUIContent("SortAlongAxis", "Transparent materials often require that triangles be rendered in a certain order. This will sort Game Objects along the specified axis. Triangles will be added to the combined mesh in this order."),
+            gc_combinedMesh = new GUIContent("Mesh", "This is the Mesh used by this baker and assigned to the combined Renderer.\n\n" +
+                                                     "If it is null then a new Mesh will be created for the next bake.\n\n" +
+                                                     "If it is a project folder asset then that asset will be overwitten (changes may be reverted if the scene is not saved).\n\n" +
+                                                     "If your are re-using the same MeshBaker to bake different combined meshes, set this to null before each new bake. If you don't then each bake will overwrite the previous bake's mesh."),
             gc_Settings = new GUIContent("Use Shared Settings", "Different bakers can share the same settings. If this field is None, then the settings below will be used. " +
                                                                 "Assign one of the following:\n" +
                                                                 "   - Mesh Baker Settings project asset \n" +
@@ -103,7 +107,7 @@ namespace DigitalOpus.MB.MBEditor
 
 
         private SerializedObject meshBaker;
-        private SerializedProperty logLevel, combiner, outputOptions, textureBakeResults, useObjsToMeshFromTexBaker, objsToMesh, mesh, sortOrderAxis;
+        private SerializedProperty logLevel, combiner, outputOptions, textureBakeResults, useObjsToMeshFromTexBaker, objsToMesh, mesh, sortOrderAxis, parentSceneObject, resultPrefabLeaveInstanceInSceneAfterBake;
 
         private SerializedProperty settingsHolder;
 
@@ -119,9 +123,10 @@ namespace DigitalOpus.MB.MBEditor
         void _init(SerializedObject mb)
         {
             this.meshBaker = mb;
-
             objsToMesh = meshBaker.FindProperty("objsToMesh");
             combiner = meshBaker.FindProperty("_meshCombiner");
+            parentSceneObject = meshBaker.FindProperty("parentSceneObject");
+            resultPrefabLeaveInstanceInSceneAfterBake = meshBaker.FindProperty("resultPrefabLeaveInstanceInSceneAfterBake");
             logLevel = combiner.FindPropertyRelative("_LOG_LEVEL");
             outputOptions = combiner.FindPropertyRelative("_outputOption");
             useObjsToMeshFromTexBaker = meshBaker.FindProperty("useObjsToMeshFromTexBaker");
@@ -206,8 +211,8 @@ namespace DigitalOpus.MB.MBEditor
             {
                 if (GUILayout.Button(gc_openToolsWindowLabelContent))
                 {
-                    MB3_MeshBakerEditorWindowInterface mmWin = (MB3_MeshBakerEditorWindowInterface)EditorWindow.GetWindow(editorWindowType);
-                    mmWin.target = (MB3_MeshBakerRoot)target;
+                    MB3_MeshBakerEditorWindow mmWin = (MB3_MeshBakerEditorWindow) EditorWindow.GetWindow(editorWindowType);
+                    mmWin.SetTarget((MB3_MeshBakerRoot)momm);
                 }
 
                 object[] objs = MB3_EditorMethods.DropZone("Drag & Drop Renderers Or Parents Here To Add Objects To Be Combined", 300, 50);
@@ -250,6 +255,16 @@ namespace DigitalOpus.MB.MBEditor
             EditorGUILayout.PropertyField(outputOptions, gc_outputOptoinsGUIContent);
             if (momm.meshCombiner.outputOption == MB2_OutputOptions.bakeIntoSceneObject)
             {
+                Transform pgo = (Transform)EditorGUILayout.ObjectField(gc_parentSceneObject, parentSceneObject.objectReferenceValue, typeof(Transform), true);
+                if (pgo != null && MB_Utility.IsSceneInstance(pgo.gameObject))
+                {
+                    parentSceneObject.objectReferenceValue = pgo;
+                }
+                else
+                {
+                    parentSceneObject.objectReferenceValue = null;
+                }
+
                 //todo switch to renderer
                 momm.meshCombiner.resultSceneObject = (GameObject)EditorGUILayout.ObjectField("Combined Mesh Object", momm.meshCombiner.resultSceneObject, typeof(GameObject), true);
                 if (momm is MB3_MeshBaker)
@@ -260,7 +275,7 @@ namespace DigitalOpus.MB.MBEditor
                     {
                         l += " (" + m.GetInstanceID() + ")";
                     }
-                    Mesh nm = (Mesh)EditorGUILayout.ObjectField(new GUIContent(l), m, typeof(Mesh), true);
+                    Mesh nm = (Mesh)EditorGUILayout.ObjectField(gc_combinedMesh, m, typeof(Mesh), true);
                     if (nm != m)
                     {
                         Undo.RecordObject(momm, "Assign Mesh");
@@ -277,6 +292,17 @@ namespace DigitalOpus.MB.MBEditor
                         "It is no longer necessary to manually copy bones to the target prefab after baking. This should happen automatically.", MessageType.Info);
                 }
 
+                Transform pgo = (Transform)EditorGUILayout.ObjectField(gc_parentSceneObject, parentSceneObject.objectReferenceValue, typeof(Transform), true);
+                if (pgo != null && MB_Utility.IsSceneInstance(pgo.gameObject)) 
+                {
+                    parentSceneObject.objectReferenceValue = pgo;
+                }
+                else
+                {
+                    parentSceneObject.objectReferenceValue = null;
+                }
+
+                EditorGUILayout.BeginHorizontal();
                 momm.resultPrefab = (GameObject)EditorGUILayout.ObjectField(gc_combinedMeshPrefabGUIContent, momm.resultPrefab, typeof(GameObject), true);
                 if (momm.resultPrefab != null)
                 {
@@ -294,8 +320,29 @@ namespace DigitalOpus.MB.MBEditor
                             momm.resultPrefab = null;
                         }
                     }
+                } else
+                {
+                    if (GUILayout.Button("Create Empty Prefab"))
+                    {
+                        if (!Application.isPlaying)
+                        {
+                            string path = EditorUtility.SaveFilePanelInProject("Create Empty Prefab", "MyPrefab", "prefab", "Create a prefab containing an empty GameObject");
+                            string pathNoFolder = Path.GetDirectoryName(path);
+                            string fileNameNoExt = Path.GetFileNameWithoutExtension(path);
+                            List<MB3_MeshBakerCommon> selectedBakers = _getBakersFromTargets(targets);
+                            if (selectedBakers.Count > 1) Debug.Log("About to create prefabs for " + selectedBakers.Count);
+                            int idx = 0;
+                            foreach (MB3_MeshBakerCommon baker in selectedBakers)
+                            {
+                                createEmptyPrefab(baker, pathNoFolder, fileNameNoExt, idx);
+                                idx++;
+                            }
+                        }
+                    }
                 }
+                EditorGUILayout.EndHorizontal();
 
+                EditorGUILayout.PropertyField(resultPrefabLeaveInstanceInSceneAfterBake, gc_resultPrefabLeaveInstanceInSceneAfterBake);
                 if (momm is MB3_MeshBaker)
                 {
                     string l = "Mesh";
@@ -304,7 +351,7 @@ namespace DigitalOpus.MB.MBEditor
                     {
                         l += " (" + m.GetInstanceID() + ")";
                     }
-                    Mesh nm = (Mesh)EditorGUILayout.ObjectField(new GUIContent(l), m, typeof(Mesh), true);
+                    Mesh nm = (Mesh)EditorGUILayout.ObjectField(gc_combinedMesh, m, typeof(Mesh), true);
                     if (nm != m)
                     {
                         Undo.RecordObject(momm, "Assign Mesh");
@@ -448,7 +495,6 @@ namespace DigitalOpus.MB.MBEditor
                     bake(baker);
                     meshBaker = new SerializedObject(mbr);
                 }
-                
             }
             GUI.backgroundColor = oldColor;
 
@@ -502,6 +548,23 @@ namespace DigitalOpus.MB.MBEditor
             return outList;
         }
 
+        private static void createEmptyPrefab(MB3_MeshBakerCommon mom, string folder, string prefabNameNoExtension, int idx)
+        {
+            if (prefabNameNoExtension != null && prefabNameNoExtension.Length > 0)
+            {
+                string prefabName = prefabNameNoExtension + idx;
+                GameObject go = new GameObject(prefabName);
+                string fullName = folder + "/" + prefabName + ".prefab";
+                fullName = AssetDatabase.GenerateUniqueAssetPath(fullName);
+                Debug.Log(fullName);
+                PrefabUtility.CreatePrefab(fullName, go);
+                GameObject.DestroyImmediate(go);
+                SerializedObject so = new SerializedObject(mom);
+                so.FindProperty("resultPrefab").objectReferenceValue =  (GameObject)AssetDatabase.LoadAssetAtPath(fullName, typeof(GameObject));
+                so.ApplyModifiedProperties();
+            }
+        }
+
         /// <summary>
         /// Bakes a combined mesh.
         /// </summary>
@@ -544,9 +607,9 @@ namespace DigitalOpus.MB.MBEditor
                 }
                 mom.meshCombiner.CheckIntegrity();
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Debug.LogError(e);
+                Debug.LogError(ex.Message + "\n" + ex.StackTrace.ToString());
             }
             finally
             {

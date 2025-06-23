@@ -177,7 +177,7 @@ namespace DigitalOpus.MB.MBEditor
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError(ex.StackTrace);
+                    Debug.LogError(ex.Message + "\n" + ex.StackTrace.ToString());
                 }
                 finally
                 {
@@ -204,9 +204,9 @@ namespace DigitalOpus.MB.MBEditor
                         }
                     }
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    Debug.LogError(e);
+                    Debug.LogError(ex.Message + "\n" + ex.StackTrace.ToString());
                 }
                 finally
                 {
@@ -544,7 +544,8 @@ namespace DigitalOpus.MB.MBEditor
                     tc.LOG_LEVEL = MB2_LogLevel.warn;
                     List<AtlasPackingResult> packingResults = new List<AtlasPackingResult>();
                     Material tempResMat = k.materials[0]; //we don't write to the materials so can use this as the result material
-                    if (tc.CombineTexturesIntoAtlases(null, null, tempResMat, objsInGroup, null, null, packingResults,
+                    MB_AtlasesAndRects tempAtlasesAndRects = new MB_AtlasesAndRects();
+                    if (tc.CombineTexturesIntoAtlases(null, tempAtlasesAndRects, tempResMat, objsInGroup, null, null, packingResults,
                         onlyPackRects:true, splitAtlasWhenPackingIfTooBig:false))
                     {
                         List<List<GameObjectFilterInfo>> atlasGroups = new List<List<GameObjectFilterInfo>>();

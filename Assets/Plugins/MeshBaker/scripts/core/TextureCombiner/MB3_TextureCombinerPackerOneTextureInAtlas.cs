@@ -7,6 +7,17 @@ namespace DigitalOpus.MB.Core
 {
     internal class MB3_TextureCombinerPackerOneTextureInAtlas : MB_ITextureCombinerPacker
     {
+        public virtual bool Validate(MB3_TextureCombinerPipeline.TexturePipelineData data)
+        {
+            if (!data.OnlyOneTextureInAtlasReuseTextures())
+            {
+                Debug.LogError("There must be only one texture in the atlas to use MB3_TextureCombinerPackerOneTextureInAtlas");
+                return false;
+            }
+
+            return true;
+        }
+
         public IEnumerator ConvertTexturesToReadableFormats(ProgressUpdateDelegate progressInfo,
             MB3_TextureCombiner.CombineTexturesIntoAtlasesCoroutineResult result,
             MB3_TextureCombinerPipeline.TexturePipelineData data,

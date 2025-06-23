@@ -363,6 +363,7 @@ namespace DigitalOpus.MB.Core
         {
             //Profile.Start//Profile("MB2_MultiMeshCombiner.AddDeleteGameObjects1");
             //PART 1 ==== Validate
+            if (deleteGOinstanceIDs == null) deleteGOinstanceIDs = emptyIDs;
             if (_usingTemporaryTextureBakeResult && gos != null && gos.Length > 0)
             {
                 MB_Utility.Destroy(_textureBakeResults);
@@ -384,7 +385,7 @@ namespace DigitalOpus.MB.Core
                 return false;
             }
             _distributeAmongBakers(gos, deleteGOinstanceIDs);
-            if (LOG_LEVEL >= MB2_LogLevel.debug) MB2_Log.LogDebug("MB2_MultiMeshCombiner.AddDeleteGameObjects numCombinedMeshes: " + meshCombiners.Count + " added:" + gos + " deleted:" + deleteGOinstanceIDs + " disableRendererInSource:" + disableRendererInSource + " maxVertsPerCombined:" + _maxVertsInMesh);
+            if (LOG_LEVEL >= MB2_LogLevel.debug) MB2_Log.LogDebug("MB2_MultiMeshCombiner.AddDeleteGameObjects numCombinedMeshes: " + meshCombiners.Count + " added:" + gos.Length + " deleted:" + deleteGOinstanceIDs.Length + " disableRendererInSource:" + disableRendererInSource + " maxVertsPerCombined:" + _maxVertsInMesh);
             return _bakeStep1(gos, deleteGOinstanceIDs, disableRendererInSource);
         }
 
@@ -629,13 +630,13 @@ namespace DigitalOpus.MB.Core
 
         public override void ClearMesh()
         {
+            // For the MultiMeshCombiner we want to destroy because that is what an "empty" multi mesh combiner looks like.
             DestroyMesh();
-            /*
-            for (int i = 0; i < meshCombiners.Count; i++)
-            {
-                meshCombiners[i].combinedMesh.ClearMesh();
-            }
-            */
+        }
+
+        public override void ClearMesh(MB2_EditorMethodsInterface editorMethods)
+        {
+            DestroyMeshEditor(editorMethods);
         }
 
         public override void DisposeRuntimeCreated()
@@ -654,22 +655,27 @@ namespace DigitalOpus.MB.Core
                 {
                     MB_Utility.Destroy(meshCombiners[i].combinedMesh.targetRenderer.gameObject);
                 }
+                
                 meshCombiners[i].combinedMesh.DestroyMesh();
             }
+
             obj2MeshCombinerMap.Clear();
             meshCombiners.Clear();
         }
 
         public override void DestroyMeshEditor(MB2_EditorMethodsInterface editorMethods)
         {
+            editorMethods.Destroy(resultSceneObject);
             for (int i = 0; i < meshCombiners.Count; i++)
             {
-                if (meshCombiners[i].combinedMesh.targetRenderer != null)
-                {
-                    editorMethods.Destroy(meshCombiners[i].combinedMesh.targetRenderer.gameObject);
-                }
+                //if (meshCombiners[i].combinedMesh.targetRenderer != null)
+                //{
+                //    editorMethods.Destroy(meshCombiners[i].combinedMesh.targetRenderer.gameObject);
+                //}
+
                 meshCombiners[i].combinedMesh.ClearMesh();
             }
+
             obj2MeshCombinerMap.Clear();
             meshCombiners.Clear();
         }

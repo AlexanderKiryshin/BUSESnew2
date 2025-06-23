@@ -7,6 +7,11 @@ namespace DigitalOpus.MB.Core
 {
     internal class MB3_TextureCombinerPackerMeshBaker : MB3_TextureCombinerPackerRoot
     {
+        public override bool Validate(MB3_TextureCombinerPipeline.TexturePipelineData data)
+        {
+            return true;
+        }
+
         public override IEnumerator CreateAtlases(ProgressUpdateDelegate progressInfo,
             MB3_TextureCombinerPipeline.TexturePipelineData data, MB3_TextureCombiner combiner,
             AtlasPackingResult packedAtlasRects,
@@ -86,26 +91,14 @@ namespace DigitalOpus.MB.Core
                 sw.Start();
                 if (data.resultType == MB2_TextureBakeResults.ResultType.atlas)
                 {
-                    if (data._saveAtlasesAsAssets && textureEditorMethods != null)
-                    {
-                        textureEditorMethods.SaveAtlasToAssetDatabase(atlases[propIdx], data.texPropertyNames[propIdx], propIdx, data.resultMaterial);
-                    }
-                    else
-                    {
-                        data.resultMaterial.SetTexture(data.texPropertyNames[propIdx].name, atlases[propIdx]);
-                    }
-
-                    data.resultMaterial.SetTextureOffset(data.texPropertyNames[propIdx].name, Vector2.zero);
-                    data.resultMaterial.SetTextureScale(data.texPropertyNames[propIdx].name, Vector2.one);
+                    SaveAtlasAndConfigureResultMaterial(data, textureEditorMethods, atlases[propIdx], data.texPropertyNames[propIdx], propIdx);
                 }
-
 
                 combiner._destroyTemporaryTextures(data.texPropertyNames[propIdx].name);
             }
 
             yield break;
         }
-
 
         internal static IEnumerator CopyScaledAndTiledToAtlas(MeshBakerMaterialTexture source, MB_TexSet sourceMaterial,
             ShaderTextureProperty shaderPropertyName, DRect srcSamplingRect, int targX, int targY, int targW, int targH,

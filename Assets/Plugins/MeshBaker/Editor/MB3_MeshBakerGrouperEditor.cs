@@ -35,11 +35,14 @@ namespace DigitalOpus.MB.MBEditor
         static GUIContent gc_Settings = new GUIContent("Use Shared Settings Asset", "Different bakers can share the same settings. If this field is None, then the settings below will be used.");
         static GUIContent gc_PieRingSpacing = new GUIContent("Ring Spacing", "Pie segments will be divided into rings.");
         static GUIContent gc_PieCombineAllInCenterRing = new GUIContent("Combine Center Ring Segments Together", "All segments in the centermost ring will be merged into a single segment.");
-
+        static GUIContent gc_ParentSceneObject = new GUIContent("Parent Scene Object","Must be a scene GameObject. Generated combined meshes will be children of this GameObject.");
+        static GUIContent gc_prefabOptions_outputFolder = new GUIContent("Prefab Output Folder", "Prefabs will be saved to this output folder.");
+        static GUIContent gc_prefabOptions_autoGeneratePrefabs = new GUIContent("Auto Generate Prefabs", "Configure each generated baker to use 'Bake Into Prefab' and generate a prefab in the output folder for the baker.");
 
         private SerializedObject grouper;
         private SerializedProperty clusterType, gridOrigin, cellSize, clusterOnLMIndex, numSegments, pieAxis, clusterByLODLevel,
-            clusterDistance, includeCellsWithOnlyOneRenderer, mbSettings, mbSettingsAsset, pieRingSpacing, pieCombineAllInCenterRing;
+            clusterDistance, includeCellsWithOnlyOneRenderer, mbSettings, mbSettingsAsset, pieRingSpacing, pieCombineAllInCenterRing,
+            prefabOptions_outputFolder, prefabOptions_autoGeneratePrefabs, parentSceneObject;
 
         private MB_MeshBakerSettingsEditor meshBakerSettingsMe;
         private MB_MeshBakerSettingsEditor meshBakerSettingsExternal;
@@ -64,6 +67,11 @@ namespace DigitalOpus.MB.MBEditor
             mbSettingsAsset = grouper.FindProperty("meshBakerSettingsAsset");
             pieRingSpacing = d.FindPropertyRelative("ringSpacing");
             pieCombineAllInCenterRing = d.FindPropertyRelative("combineSegmentsInInnermostRing");
+
+            parentSceneObject = grouper.FindProperty("parentSceneObject");
+            prefabOptions_outputFolder = grouper.FindProperty("prefabOptions_outputFolder");
+            prefabOptions_autoGeneratePrefabs = grouper.FindProperty("prefabOptions_autoGeneratePrefabs");
+
             meshBakerSettingsMe = new MB_MeshBakerSettingsEditor();
             meshBakerSettingsMe.OnEnable(mbSettings);
             if (mbSettingsAsset.objectReferenceValue != null)
@@ -177,6 +185,17 @@ namespace DigitalOpus.MB.MBEditor
             MB3_MeshBakerGrouper tbg = (MB3_MeshBakerGrouper)target;
 
             MB3_TextureBaker tb = tbg.GetComponent<MB3_TextureBaker>();
+
+            Transform pgo = (Transform)EditorGUILayout.ObjectField(gc_ParentSceneObject, parentSceneObject.objectReferenceValue, typeof(Transform), true);
+            if (pgo != null && MB_Utility.IsSceneInstance(pgo.gameObject))
+            {
+                parentSceneObject.objectReferenceValue = pgo;
+            }
+            else
+            {
+                parentSceneObject.objectReferenceValue = null;
+            }
+
             EditorGUILayout.PropertyField(clusterType, gc_ClusterType);
             MB3_MeshBakerGrouper.ClusterType gg = (MB3_MeshBakerGrouper.ClusterType)clusterType.enumValueIndex;
             if ((gg == MB3_MeshBakerGrouper.ClusterType.none && !(tbg.grouper is MB3_MeshBakerGrouperNone)) ||
@@ -245,7 +264,18 @@ namespace DigitalOpus.MB.MBEditor
             EditorGUILayout.PropertyField(clusterOnLMIndex, gc_ClusterOnLMIndex);
             EditorGUILayout.PropertyField(clusterByLODLevel, gc_ClusterByLODLevel);
             EditorGUILayout.PropertyField(includeCellsWithOnlyOneRenderer, gc_IncludeCellsWithOnlyOneRenderer);
-
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Prefab Output Settings", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(prefabOptions_autoGeneratePrefabs, gc_prefabOptions_autoGeneratePrefabs);
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.PropertyField(prefabOptions_outputFolder, gc_prefabOptions_outputFolder);
+            if (GUILayout.Button("Browse"))
+            {
+                string path = EditorUtility.OpenFolderPanel("Browse For Output Folder", "", "");
+                path = MB_BatchPrefabBakerEditorFunctions.ConvertFullPathToProjectRelativePath(path);
+                prefabOptions_outputFolder.stringValue = path;
+            }
+            EditorGUILayout.EndHorizontal();
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Mesh Baker Settings", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox("These settings will be shared by all created Mesh Bakers.", MessageType.Info);
@@ -289,6 +319,13 @@ namespace DigitalOpus.MB.MBEditor
                 return;
             }
 
+            if (tbg.parentSceneObject == null ||
+                !MB_Utility.IsSceneInstance(tbg.parentSceneObject.gameObject))
+            {
+                GameObject g = new GameObject("CombinedMeshes-" + tbg.name);
+                tbg.parentSceneObject = g.transform;
+            }
+
             //check if any of the objes that will be added to bakers already exist in child bakers
             List<GameObject> objsWeAreGrouping = tb.GetObjectsToCombine();
             MB3_MeshBakerCommon[] alreadyExistBakers = tbg.GetComponentsInChildren<MB3_MeshBakerCommon>();
@@ -313,10 +350,65 @@ namespace DigitalOpus.MB.MBEditor
                     "This grouper has child Mesh Baker objects from a previous clustering. Do you want to delete these and create new ones?", "OK", "Cancel");
             }
 
+            if (tbg.prefabOptions_autoGeneratePrefabs)
+            {
+                if (!MB_BatchPrefabBakerEditorFunctions.ValidateFolderIsInProject("Output Folder", tbg.prefabOptions_outputFolder))
+                {
+                    Debug.LogError("If " + gc_prefabOptions_autoGeneratePrefabs.text + " is enabled, you must provide an output folder. Prefabs will be saved in this folder.");
+                    proceed = false;
+                }
+            }
+
             if (proceed)
             {
                 if (foundChildBakersWithObjsToCombine) tbg.DeleteAllChildMeshBakers();
-                tbg.grouper.DoClustering(tb, tbg);
+                List<MB3_MeshBakerCommon> newBakers = tbg.grouper.DoClustering(tb, tbg);
+                if (newBakers.Count > 0) DoGeneratePrefabsIfNecessary(tbg, newBakers);
+            }
+        }
+
+        private static void DoGeneratePrefabsIfNecessary(MB3_MeshBakerGrouper grouper, List<MB3_MeshBakerCommon> newBakers)
+        {
+            if (!grouper.prefabOptions_autoGeneratePrefabs &&
+                !grouper.prefabOptions_mergeOutputIntoSinglePrefab) return;
+            if (!MB_BatchPrefabBakerEditorFunctions.ValidateFolderIsInProject("Output Folder", grouper.prefabOptions_outputFolder)) return;
+
+            if (grouper.prefabOptions_autoGeneratePrefabs)
+            {
+                for (int i = 0; i < newBakers.Count; i++)
+                {
+                    MB3_MeshBakerCommon baker = newBakers[i];
+
+                    string path = grouper.prefabOptions_outputFolder;
+                    // Generate a new prefab name
+                    string prefabName = baker.name.Replace("MeshBaker", "CombinedMesh");
+                    prefabName = prefabName.Replace(" ", "_");
+                    prefabName = prefabName.Replace(",", "_");
+                    prefabName = prefabName.Trim(Path.GetInvalidFileNameChars());
+                    prefabName = prefabName.Trim(Path.GetInvalidPathChars());
+
+                    string pathName = AssetDatabase.GenerateUniqueAssetPath(path + "/" + prefabName + ".prefab");
+                    if (pathName == null || pathName.Length == 0)
+                    {
+                        Debug.LogError("Could not generate prefab " + prefabName + " in folder " + path + ". There is something wrong with the path or prefab name.");
+                        continue;
+                    }
+
+                    // Generate a new prefab
+                    GameObject go = new GameObject(baker.name);
+                    GameObject pf = PrefabUtility.CreatePrefab(pathName, go);
+
+                    // Configure the baker to bake into the prefab
+                    baker.resultPrefab = pf;
+                    baker.resultPrefabLeaveInstanceInSceneAfterBake = true;
+                    baker.meshCombiner.outputOption = MB2_OutputOptions.bakeIntoPrefab;
+                    if (grouper.parentSceneObject != null)
+                    {
+                        baker.parentSceneObject = grouper.parentSceneObject;
+                    }
+
+                    MB_Utility.Destroy(go);
+                }
             }
         }
 
@@ -340,9 +432,9 @@ namespace DigitalOpus.MB.MBEditor
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Debug.LogError(e);
+                Debug.LogError(ex.Message + "\n" + ex.StackTrace.ToString());
             }
             finally
             {
@@ -362,9 +454,9 @@ namespace DigitalOpus.MB.MBEditor
                     mBakers[i].EnableDisableSourceObjectRenderers(enableRenderers);
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Debug.LogError(e);
+                Debug.LogError(ex.Message + "\n" + ex.StackTrace.ToString());
             }
             finally
             {

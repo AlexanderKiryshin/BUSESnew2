@@ -11,6 +11,9 @@ using DigitalOpus.MB.MBEditor;
 public class MB3_MeshBakerEditorFunctions
 {
 
+    /// <summary>
+    /// Used by UnityEditorInspectors for background colors
+    /// </summary>
     public static Texture2D MakeTex(int width, int height, Color col)
     {
         Color[] pix = new Color[width * height];
@@ -144,6 +147,11 @@ public class MB3_MeshBakerEditorFunctions
         {
             success = true;
             mom.Apply(UnwrapUV2);
+            if (mom.parentSceneObject != null)
+            {
+                mom.meshCombiner.resultSceneObject.transform.parent = mom.parentSceneObject;
+            }
+
             if (createdDummyTextureBakeResults)
             {
                 Debug.Log(String.Format("Successfully baked {0} meshes each material is mapped to its own submesh.", mom.GetObjectsToCombine().Count));
@@ -176,11 +184,17 @@ public class MB3_MeshBakerEditorFunctions
         }
         try
         {
-            mom.ClearMesh();
+            MB3_EditorMethods editorMethods = new MB3_EditorMethods();
+            mom.ClearMesh(editorMethods);
             if (mom.AddDeleteGameObjects(objsToCombine, null, false))
             {
                 success = true;
                 mom.Apply(UnwrapUV2);
+                if (mom.parentSceneObject != null)
+                {
+                    mom.meshCombiner.resultSceneObject.transform.parent = mom.parentSceneObject;
+                }
+
                 if (createdDummyTextureBakeResults)
                 {
                     Debug.Log(String.Format("Successfully baked {0} meshes each material is mapped to its own submesh.", mom.GetObjectsToCombine().Count));
@@ -202,8 +216,7 @@ public class MB3_MeshBakerEditorFunctions
                     string folderPath = prefabPth.Substring(0, prefabPth.Length - baseName.Length - 7);
                     string newFilename = folderPath + baseName + "-mesh";
                     SaveMeshsToAssetDatabase(mom, folderPath, newFilename);
-                    GameObject rootGO = RebuildPrefab(mom, ref so, tempPrefabInstanceRoots, objsToCombine);
-                    MB_Utility.Destroy(mom.meshCombiner.resultSceneObject);
+                    GameObject rootGO = RebuildPrefab(mom, ref so, mom.resultPrefabLeaveInstanceInSceneAfterBake, tempPrefabInstanceRoots, objsToCombine);
                 }
             }
             else
@@ -281,7 +294,8 @@ public class MB3_MeshBakerEditorFunctions
 
                 if (pr == null)
                 {
-                    pr = objsToCombine[i];
+                    pr = _FindCommonAncestorForBonesAnimatorAndSmr(objsToCombine[i]);
+                    
                 }
             }
 
@@ -331,7 +345,7 @@ public class MB3_MeshBakerEditorFunctions
             List<Transform> renderers = srcPrefabInstances2Renderers[srcRoots[i]];
             for (int j = 0; j < renderers.Count; j++)
             {
-                Transform t = MB3_BatchPrefabBakerEditor.FindCorrespondingTransform(srcRoots[i], renderers[j], targRoots[i]);
+                Transform t = MB_BatchPrefabBakerEditorFunctions.FindCorrespondingTransform(srcRoots[i], renderers[j], targRoots[i]);
                 Debug.Assert(!newObjsToCombine.Contains(t.gameObject));
                 newObjsToCombine.Add(t.gameObject);
             }
@@ -353,6 +367,100 @@ public class MB3_MeshBakerEditorFunctions
         }
     }
 
+    private static GameObject _FindCommonAncestorForBonesAnimatorAndSmr(GameObject sceneInstance)
+    {
+        Renderer mr = MB_Utility.GetRenderer(sceneInstance);
+        Debug.Assert(mr != null, "Should only be called on a GameObject with a Renderer");
+
+        Transform lca = sceneInstance.transform;
+
+        if (mr is SkinnedMeshRenderer)
+        {
+            // find lowest common ancestor of bones and SMR
+            Transform[] bones = ((SkinnedMeshRenderer)mr).bones;
+            HashSet<Transform> ancestorsOfLCA = new HashSet<Transform>();
+
+            _CollectAllAncestors(ancestorsOfLCA, lca);
+
+            // visit each other bone, find LCA of LCA and bone
+            for (int i = 0; i < bones.Length; i++)
+            {
+                if (bones[i] != null)
+                {
+                    lca = _FindLowestCommonAncestor(ancestorsOfLCA, lca, bones[i], sceneInstance);
+                }
+            }
+        }
+
+        // Search ancestors for an Animator/Animation
+        {
+            Transform t = lca;
+            while (t != null)
+            {
+                if (t.GetComponent<Animator>() != null ||
+                    t.GetComponent<Animation>() != null)
+                {
+                    //Debug.Log("Found ancestor with Animation/Animator: " + t);
+                    lca = t;
+                    break;
+                }
+
+                t = t.parent;
+            }
+
+            return lca.gameObject;
+        }
+    }
+
+    private static Transform _FindLowestCommonAncestor(HashSet<Transform> ancestorsOfLCA, Transform lca, Transform b, GameObject db_Renderer)
+    {
+        // visit all ancestors of b
+        Transform newLca = lca;
+        Transform t = b;
+        bool found = false;
+        while (t != null)
+        {
+            if (ancestorsOfLCA.Contains(t))
+            {
+                found = true;
+                newLca = t;
+                break;
+            }
+
+            t = t.parent;
+        }
+
+        if (found)
+        {
+            //Debug.Log("Finding all ancestors for: " + lca + ", " + b + "  found: " + newLca);
+            if (newLca != lca)
+            {
+                _CollectAllAncestors(ancestorsOfLCA, newLca);
+            }
+
+            return newLca;
+        }
+        else
+        {
+            Debug.LogError("Renderer '" + db_Renderer + "' does not share a common ancestor in the hierarcy with its bones. If you are baking a prefab, then the prefab will not contain the bones. Try creating a GameObject parent for '" + db_Renderer + "' and its bones and re-baking.");
+            return null;
+        }
+    }
+
+    private static void _CollectAllAncestors(HashSet<Transform> ancestorsOfA, Transform targ)
+    {
+        Transform t = targ;
+        ancestorsOfA.Clear();
+        ancestorsOfA.Add(t);
+        while (t != null)
+        {
+            t = t.parent;
+            ancestorsOfA.Add(t);
+        }
+
+        //Debug.Log("_CollectAllAncestors of: " + targ + " found: " + ancestorsOfA.Count);
+    }
+
     private static void _CheckSrcRootScale(MB_RenderType renderType, Transform trans)
     {
         Debug.Assert(renderType == MB_RenderType.skinnedMeshRenderer, "Render Type must be skinned mesh Renderer");
@@ -362,9 +470,10 @@ public class MB3_MeshBakerEditorFunctions
             if (Vector3.Distance(t.localScale, Vector3.one) > 10e-5f)
             {
                 Debug.LogError("Src object " + trans.gameObject + " is a game object instance in the scene that is a child of a hierarchy with scale that is not (1,1,1). " +
-                    "This object will become the bones of a skinned mesh renderer and these bones need to be copied to the Combined Mesh Prefab. When this happens, it may not " +
-                    "be possible to re create the the bone position and scale in the Combined Mesh Prefab that matches the position and scale of the source object. If objects " +
-                    " are not in the correct place after baking, ensure that all scaling happens inside the hierarchy of the source-object-prefab-instances.");
+                    "This object will become the bones of a skinned mesh renderer and these bones will be copied to the Combined Mesh Prefab. When this happens, it may not " +
+                    "be possible to re create the bone position and scale in the Combined Mesh Prefab that matches the position and scale of the source object. /n/n" +
+                    "When baking into a prefab it is recommended that all source objects be part of prefab instances in the scene. For best " +
+                    " results create temporary prefabs if necessary and include all scaling in each prefab's hierarchy.");
             }
             t = t.parent;
         }
@@ -432,31 +541,33 @@ public class MB3_MeshBakerEditorFunctions
     }
 
     // The serialized object reference is necessary to work around a nasty unity bug.
-    public static GameObject RebuildPrefab(MB3_MeshBakerCommon mom, ref SerializedObject so, List<Transform> tempPrefabInstanceRoots, GameObject[] objsToCombine)
+    public static GameObject RebuildPrefab(MB3_MeshBakerCommon mom, ref SerializedObject so, bool leaveInstanceInSceneAfterBake, List<Transform> tempPrefabInstanceRoots, GameObject[] objsToCombine)
     {
         if (MB3_MeshCombiner.EVAL_VERSION) return null;
 
         if (mom.meshCombiner.LOG_LEVEL >= MB2_LogLevel.debug) Debug.Log("Rebuilding Prefab: " + mom.resultPrefab);
         GameObject prefabRoot = mom.resultPrefab;
-        GameObject rootGO = (GameObject)PrefabUtility.InstantiatePrefab(prefabRoot);
-
-        rootGO.transform.position = Vector3.zero;
-        rootGO.transform.rotation = Quaternion.identity;
-        rootGO.transform.localScale = Vector3.one;
+        GameObject instanceRootGO = mom.meshCombiner.resultSceneObject;
+        /*
+        GameObject instanceRootGO = (GameObject)PrefabUtility.InstantiatePrefab(prefabRoot);
+        instanceRootGO.transform.position = Vector3.zero;
+        instanceRootGO.transform.rotation = Quaternion.identity;
+        instanceRootGO.transform.localScale = Vector3.one;
 
         //remove everything in the prefab.
-        MBVersionEditor.UnpackPrefabInstance(rootGO, ref so);
-        int numChildren = rootGO.transform.childCount;
+        
+        MBVersionEditor.UnpackPrefabInstance(instanceRootGO, ref so);
+        int numChildren = instanceRootGO.transform.childCount;
         for (int i = numChildren - 1; i >= 0; i--)
         {
-            MB_Utility.Destroy(rootGO.transform.GetChild(i).gameObject);
+            MB_Utility.Destroy(instanceRootGO.transform.GetChild(i).gameObject);
         }
 
         if (mom is MB3_MeshBaker)
         {
             MB3_MeshBaker mb = (MB3_MeshBaker)mom;
             MB3_MeshCombinerSingle mbs = (MB3_MeshCombinerSingle)mb.meshCombiner;
-            MB3_MeshCombinerSingle.BuildPrefabHierarchy(mbs, rootGO, mbs.GetMesh());
+            MB3_MeshCombinerSingle.BuildPrefabHierarchy(mbs, instanceRootGO, mbs.GetMesh());
         }
         else if (mom is MB3_MultiMeshBaker)
         {
@@ -464,26 +575,29 @@ public class MB3_MeshBakerEditorFunctions
             MB3_MultiMeshCombiner mbs = (MB3_MultiMeshCombiner)mmb.meshCombiner;
             for (int i = 0; i < mbs.meshCombiners.Count; i++)
             {
-                MB3_MeshCombinerSingle.BuildPrefabHierarchy(mbs.meshCombiners[i].combinedMesh, rootGO, mbs.meshCombiners[i].combinedMesh.GetMesh(), true);
+                MB3_MeshCombinerSingle.BuildPrefabHierarchy(mbs.meshCombiners[i].combinedMesh, instanceRootGO, mbs.meshCombiners[i].combinedMesh.GetMesh(), true);
             }
         }
         else
         {
             Debug.LogError("Argument was not a MB3_MeshBaker or an MB3_MultiMeshBaker.");
         }
+        */
 
         if (mom.meshCombiner.settings.renderType == MB_RenderType.skinnedMeshRenderer)
         {
-            _MoveBonesToCombinedMeshPrefabAndDeleteRenderers(rootGO.transform, tempPrefabInstanceRoots, objsToCombine);
+            _MoveBonesToCombinedMeshPrefabAndDeleteRenderers(instanceRootGO.transform, tempPrefabInstanceRoots, objsToCombine);
         }
 
         string prefabPth = AssetDatabase.GetAssetPath(prefabRoot);
-        MBVersionEditor.ReplacePrefab(rootGO, prefabPth, MB_ReplacePrefabOption.connectToPrefab);
-        Editor.DestroyImmediate(rootGO);
-
+        MBVersionEditor.ReplacePrefab(instanceRootGO, prefabPth, MB_ReplacePrefabOption.connectToPrefab);
         mom.resultPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPth);
+        if (!leaveInstanceInSceneAfterBake)
+        {
+            Editor.DestroyImmediate(instanceRootGO);
+        }
 
-        return rootGO;
+        return instanceRootGO;
     }
 
     public static void UnwrapUV2(Mesh mesh, float hardAngle, float packingMargin)

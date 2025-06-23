@@ -52,7 +52,7 @@ MonoBehaviour:
   _distanceThreshold: 0.6
   _viewTransform: {fileID: 2580407318747351687}
   meshRenderer: {fileID: 3928247963378817605}
-  Color: {fileID: 0}
+  ColorType: 0
 --- !u!65 &412124562491252076
 BoxCollider:
   m_ObjectHideFlags: 0

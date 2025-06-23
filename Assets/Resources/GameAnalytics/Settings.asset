@@ -26,17 +26,17 @@ MonoBehaviour:
   UserMessagesFailed: 0
   CustomArea: 
   gameKey:
-  - ea5e14628fb060220315b8be377cee26
+  - ff0f4d52a9e03ff27b58aab1e2d13a23
   secretKey:
-  - a6638a6c1c3d7c2baf0afe94ebba655e47b30eee
+  - 637e73140c4fc1953083d11c57425496da11c728
   Build:
   - 0.1
   SelectedPlatformOrganization:
-  - another world games
+  - 
   SelectedPlatformStudio:
-  - another world games
+  - 
   SelectedPlatformGame:
-  - bus
+  - 
   SelectedPlatformGameID: e8b50400
   SelectedOrganization: 01000000
   SelectedStudio: 01000000
@@ -63,7 +63,7 @@ MonoBehaviour:
   ResourceCurrencies: []
   LastCreatedGamePlatform: -1
   Platforms: 11000000
-  CurrentInspectorState: 3
+  CurrentInspectorState: 1
   ClosedHints: 
   DisplayHints: 0
   DisplayHintsScrollState: {x: 0, y: 0}

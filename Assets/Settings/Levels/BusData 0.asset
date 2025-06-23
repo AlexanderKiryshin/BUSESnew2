@@ -13,15 +13,15 @@ MonoBehaviour:
   m_Name: BusData 0
   m_EditorClassIdentifier: 
   buses:
-  - position: {x: 2.31, y: 0, z: -1.96}
-    rotation: {x: -0, y: 0.70710695, z: -0, w: -0.70710665}
-    busType: 0
-  - position: {x: -1.32, y: 0, z: -1.89}
-    rotation: {x: -0, y: 0.70710695, z: -0, w: -0.70710665}
+  - position: {x: -1.32, y: 0, z: -3.65}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
     busType: 0
   - position: {x: 2.47, y: 0, z: 1.26}
     rotation: {x: -0, y: 1, z: -0, w: -0.00000031292436}
     busType: 0
   - position: {x: -1.28, y: 0, z: 1.57}
-    rotation: {x: -0, y: 0.707107, z: -0, w: 0.7071066}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+    busType: 0
+  - position: {x: 2.49, y: 0, z: -3.97}
+    rotation: {x: 0, y: -1, z: 0, w: 0}
     busType: 0

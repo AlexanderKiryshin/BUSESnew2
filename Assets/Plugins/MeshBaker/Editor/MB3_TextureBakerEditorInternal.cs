@@ -97,7 +97,7 @@ namespace DigitalOpus.MB.MBEditor
         //private SerializedObject textureBaker;
         internal SerializedProperty logLevel, textureBakeResults, maxTilingBakeSize, maxAtlasSize,
             doMultiMaterial, doMultiMaterialSplitAtlasesIfTooBig, doMultiMaterialIfOBUVs, considerMeshUVs, resultMaterial, resultMaterials, atlasPadding,
-            resizePowerOfTwoTextures, customShaderProperties, objsToMesh, texturePackingAlgorithm, maxAtlasWidthOverride, maxAtlasHeightOverride, useMaxAtlasWidthOverride, useMaxAtlasHeightOverride,
+            resizePowerOfTwoTextures, customShaderProperties, objsToMesh, texturePackingAlgorithm, layerTexturePackerFastMesh, maxAtlasWidthOverride, maxAtlasHeightOverride, useMaxAtlasWidthOverride, useMaxAtlasHeightOverride,
             forcePowerOfTwoAtlas, considerNonTextureProperties, sortOrderAxis, resultType,
             resultMaterialsTexArray, textureArrayOutputFormats;
 
@@ -129,8 +129,10 @@ namespace DigitalOpus.MB.MBEditor
                                                               "Mesh Baker Texture Packer: Atlases will be most efficient size and shape (not limited to a power of two). More robust for large atlases. \n\n" +
                                                               "Mesh Baker Texture Packer Fast: Same as Mesh Baker Texture Packer but creates atlases on the graphics card using RenderTextures instead of the CPU. Source textures can be compressed. May not be pixel perfect. \n\n" +
                                                               "Mesh Baker Texture Packer Horizontal (Experimental): Packs all images vertically to allow horizontal-only UV-tiling.\n\n" +
-                                                              "Mesh Baker Texture Packer Vertical (Experimental): Packs all images horizontally other to allow vertical-only UV-tiling.\n\n"),
+                                                              "Mesh Baker Texture Packer Vertical (Experimental): Packs all images horizontally other to allow vertical-only UV-tiling.\n\n" +
+                                                              "Mesh Baker Texture Packer Fast V2 (Experimental): A rewrite of 'Mesh Baker Texture Packer Fast' that is compatible with URP and HDRP and even faster.\n\n"),
 
+            layerTexturePackerFastMeshGUIContent = new GUIContent("Atlas Render Layer", "Bad 'Atlas Render Layer' value. The atlas is rendered using a MeshRenderer in the scene. This MeshRenderer needs to be on a layer that is not used by any other renderers. If there are other renderers on this layer, those renderers could render in front of the atlas which would ruin it."),
             configAtlasMultiMatsFromObjsContent = new GUIContent("Build Source To Combined Mapping From \n Objects To Be Combined", "This will group the materials on your source objects by shader and create one source to combined mapping for each shader found. For example if combining trees then all the materials with the same bark shader will be grouped togther and all the materials with the same leaf material will be grouped together. You can adjust the results afterwards. \n\nIf fix out-of-bounds UVs is NOT checked then submeshes with UVs outside 0,0..1,1 will be mapped to their own submesh regardless of shader."),
             configAtlasTextureSlicesFromObjsContent = new GUIContent("Build Texture Array Slices From \n Objects To Be Combined", "This will group the materials on your source objects by shader and create slices. Objects with out-of-bounds UVs will be put on their own slice. You can adjust the results afterwards."),
             forcePowerOfTwoAtlasContent = new GUIContent("Force Power-Of-Two Atlas", "Forces atlas x and y dimensions to be powers of two with aspect ratio 1:1,1:2 or 2:1. Unity recommends textures be a power of two for everything but GUI textures."),
@@ -147,6 +149,8 @@ namespace DigitalOpus.MB.MBEditor
             gc_useMaxAtlasWidthOverride = new GUIContent("Use Max Width Override", "Force the atlas width to not exceed the override value"),
             gc_useMaxAtlasHeightOverride = new GUIContent("Use Max Height Override", "Force the atlas width to not exceed the override value"),
             gc_atlasPadding = new GUIContent("Atlas Padding", "Number of pixels to pad around the edge of the atlas.");
+
+        protected string layerTexturePackerFastMeshMessage;
 
 
         [MenuItem("GameObject/Create Other/Mesh Baker/TextureBaker", false, 100)]
@@ -168,9 +172,9 @@ namespace DigitalOpus.MB.MBEditor
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                if (e == null) e = null; //Do nothing supress compiler warning
+                if (ex == null) ex = null; //Do nothing supress compiler warning
             }
             GameObject nmb = new GameObject("TextureBaker (" + largest + ")");
             nmb.transform.position = Vector3.zero;
@@ -201,6 +205,7 @@ namespace DigitalOpus.MB.MBEditor
             useMaxAtlasHeightOverride = textureBaker.FindProperty("_useMaxAtlasHeightOverride");
             textureBakeResults = textureBaker.FindProperty("_textureBakeResults");
             texturePackingAlgorithm = textureBaker.FindProperty("_packingAlgorithm");
+            layerTexturePackerFastMesh = textureBaker.FindProperty("_layerTexturePackerFastMesh");
             forcePowerOfTwoAtlas = textureBaker.FindProperty("_meshBakerTexturePackerForcePowerOfTwo");
             considerNonTextureProperties = textureBaker.FindProperty("_considerNonTextureProperties");
             sortOrderAxis = textureBaker.FindProperty("sortAxis");
@@ -346,7 +351,8 @@ namespace DigitalOpus.MB.MBEditor
             DrawPropertyFieldWithLabelWidth(considerMeshUVs, fixOutOfBoundsGUIContent, labelWidth);
             EditorGUI.EndDisabledGroup();
             if (texturePackingAlgorithm.intValue == (int)MB2_PackingAlgorithmEnum.MeshBakerTexturePacker ||
-                texturePackingAlgorithm.intValue == (int)MB2_PackingAlgorithmEnum.MeshBakerTexturePacker_Fast)
+                texturePackingAlgorithm.intValue == (int)MB2_PackingAlgorithmEnum.MeshBakerTexturePacker_Fast ||
+                texturePackingAlgorithm.intValue == (int)MB2_PackingAlgorithmEnum.MeshBakerTexturePaker_Fast_V2_Beta)
             {
                 DrawPropertyFieldWithLabelWidth(forcePowerOfTwoAtlas, forcePowerOfTwoAtlasContent, labelWidth);
             }
@@ -372,6 +378,41 @@ namespace DigitalOpus.MB.MBEditor
                     if (!useMaxAtlasHeightOverride.boolValue) EditorGUI.BeginDisabledGroup(true);
                     EditorGUILayout.PropertyField(maxAtlasHeightOverride, gc_overrideMaxAtlasHeight);
                     if (!useMaxAtlasHeightOverride.boolValue) EditorGUI.EndDisabledGroup();
+                }
+            }
+
+            if (texturePackingAlgorithm.intValue == (int) MB2_PackingAlgorithmEnum.MeshBakerTexturePaker_Fast_V2_Beta)
+            {
+                // layer field
+                int newValueLayerTexturePackerFastMesh = EditorGUILayout.LayerField(layerTexturePackerFastMeshGUIContent, layerTexturePackerFastMesh.intValue);
+                bool isNewValue = newValueLayerTexturePackerFastMesh == layerTexturePackerFastMesh.intValue;
+                layerTexturePackerFastMesh.intValue = newValueLayerTexturePackerFastMesh;
+                if (isNewValue)
+                {
+                    Renderer[] rs = GameObject.FindObjectsOfType<Renderer>();
+                    int numRenderersOnLayer = 0;
+                    for (int i = 0; i < rs.Length; i++)
+                    {
+                        if (rs[i].gameObject.layer == newValueLayerTexturePackerFastMesh) numRenderersOnLayer++;
+                    }
+
+                    string layerName = LayerMask.LayerToName(layerTexturePackerFastMesh.intValue);
+                    if (layerName != null && layerName.Length > 0 && numRenderersOnLayer == 0)
+                    {
+                        layerTexturePackerFastMeshMessage = null;
+                    } else
+                    {
+                        layerTexturePackerFastMeshMessage = layerTexturePackerFastMeshGUIContent.tooltip;
+                    }
+                }
+
+                string scriptDefinesErrMessage = ValidatePlayerSettingsDefineSymbols();
+                
+                if (layerTexturePackerFastMesh.intValue == -1 || 
+                    (layerTexturePackerFastMeshMessage != null && layerTexturePackerFastMeshMessage.Length > 0) ||
+                    (scriptDefinesErrMessage != null))
+                {
+                    EditorGUILayout.HelpBox(layerTexturePackerFastMeshMessage + "\n\n" + scriptDefinesErrMessage, MessageType.Error);
                 }
             }
 
@@ -496,6 +537,53 @@ namespace DigitalOpus.MB.MBEditor
             }
 
             return outList;
+        }
+
+        public static string ValidatePlayerSettingsDefineSymbols()
+        {
+            // Check that the needed defines exist or are present when they should not be.
+            MBVersion.PipelineType pipelineType = MBVersion.DetectPipeline();
+            BuildTargetGroup targetGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
+            string scriptDefines = PlayerSettings.GetScriptingDefineSymbolsForGroup(targetGroup);
+
+            string s = "";
+            if (pipelineType == MBVersion.PipelineType.HDRP)
+            {
+                if (!scriptDefines.Contains(MBVersion.MB_USING_HDRP))
+                {
+                    s += "The GraphicsSettings -> Render Pipeline Asset is configured to use HDRP. Please add 'MB_USING_HDRP' to PlayerSettings -> Scripting Define Symbols for all the build platforms " + 
+                        " that you are targeting. If there are compile errors check that the MeshBakerCore.asmdef file has references for:\n\n" +
+                        "   Unity.RenderPipelines.HighDefinition.Runtime\n" +
+                        "   Unity.RenderPipelines.HighDefinition.Config.Runtime (Unity 2019.3+)\n";
+                }
+
+                /*
+                Type tp = Type.GetType("UnityEngine.Rendering.HighDefinition.HDAdditionalCameraData");
+                if (tp == null)
+                {
+                    s += "The class 'HDAdditionalCameraData' cannot be found by the MeshBaker assembly. Ensure that the following assemblies are referenced by the MeshBaker.asmdef file: \n" +
+                        "    Unity.RenderPipelines.HighDefinition.Runtime\n" +
+                        "    Unity.RenderPipelines.HighDefinition.Config.Runtime (Unity 2019.3+)\n\n"+
+                        "Or download the HDRP version of the package from the asset store.";
+                }
+                */
+            }
+            else
+            {
+                if (scriptDefines.Contains(MBVersion.MB_USING_HDRP))
+                {
+                    s += "Please remove 'MB_USING_HDRP' from PlayerSettings -> Scripting Define Symbols for the current build platform. If this define is present there may be compile errors because Mesh Baker tries to access classes which only exist in the HDRP API.";
+                }
+            }
+
+            if (s.Length > 0)
+            {
+                return s;
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 }

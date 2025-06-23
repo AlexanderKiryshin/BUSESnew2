@@ -34,9 +34,9 @@
     "customFlagsSettings": {
         "flagsProvider": ""
     },
-    "overrideLanguageSettings": false,
+    "overrideLanguageSettings": true,
     "customLanguageSettings": {
-        "languageProvider": ""
+        "languageProvider": "PrototypeLanguage"
     },
     "overridePaymentsSettings": false,
     "customPaymentsSettings": {

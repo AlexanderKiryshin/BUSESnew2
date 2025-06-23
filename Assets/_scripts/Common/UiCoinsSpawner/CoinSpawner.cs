@@ -34,7 +34,7 @@ public class CoinSpawner : MonoBehaviour
 
             GameObject coin = Instantiate(coinPrefab, worldPosition, Quaternion.identity, spawnArea);
 
-            StartCoroutine(MoveCoinToTarget(coin, i * delayBetweenCoins +2));
+            StartCoroutine(MoveCoinToTarget(coin, i * delayBetweenCoins +0.1f));
         }
     }
 

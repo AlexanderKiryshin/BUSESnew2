@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Metrica:
     enable: 1
-    metricaCounterID: 0
+    metricaCounterID: 102617585
     log: 1
     useYandexMetrica: 1
   Basic:

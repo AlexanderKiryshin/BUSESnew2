@@ -42,8 +42,7 @@ namespace Assets._scripts
         private IEnumerator SetLanguageRoutine()
         {
             yield return new WaitUntil(() => MirraSDK.IsInitialized);
-            _currentLanguage = LanguageType.English;
-
+            _currentLanguage = MirraSDK.Language.Current;
             switch (_currentLanguage)
             {
                 case LanguageType.Russian:
@@ -97,9 +96,10 @@ namespace Assets._scripts
                     ["remove_ads_bundle"] = "Remove ads bundle",
                     ["replay"]="Replay",
                     ["reamoveAdDescription"]= "Disables ads during gameplay",
-                    ["ads"]= "COFFEE BREAK IN ",
+                    ["ads"] = "ADS THROUGH ",
                     ["score"]="Score: ",
                     ["leaderboard"] = "Leaderboard",
+                    ["person_left"] = "Remaining passengers:",
                 },
                 [LanguageType.Russian] = new Dictionary<string, string>
                 {
@@ -139,9 +139,10 @@ namespace Assets._scripts
                     ["remove_ads_bundle"] = "Отключить рекламу",
                     ["replay"]="Переиграть",
                     ["reamoveAdDescription"]="Отключает рекламу во время игрового процесса",
-                    ["ads"] = "КОФЕ БРЕЙК ЧЕРЕЗ ",
+                    ["ads"] = "РЕКЛАМА ЧЕРЕЗ ",
                     ["score"] = "Счет: ",
                     ["leaderboard"] = "Таблица лидеров",
+                    ["person_left"] = "Осталось пассажиров:",
                 },
                 [LanguageType.Turkish] = new Dictionary<string, string>
                 {
@@ -181,9 +182,11 @@ namespace Assets._scripts
                     ["remove_ads_bundle"] = "Reklam paketini kaldır",
                     ["replay"]="Yeniden oyna",
                     ["reamoveAdDescription"]= "Oyun sırasında reklamları devre dışı bırakır",
-                    ["ads"] = "Kahve molası ",
+                    ["ads"] = "REKLAM YOLUYLA ",
                     ["score"] = "Puan: ",
                     ["leaderboard"] = "Lider Tablosu",
+                    ["person_left"] = "Kalan yolcu:",
+
                 },
                 [LanguageType.German] = new Dictionary<string, string>
                 {
@@ -223,9 +226,10 @@ namespace Assets._scripts
                     ["remove_ads_bundle"] = "Werbungspaket entfernen",
                     ["replay"] = "Nochmal spielen",
                     ["reamoveAdDescription"] = "Schaltet Werbung während des Spiels aus",
-                    ["ads"] = "Kaffeepause ",
+                    ["ads"] = "WERBUNG DURCH ",                 
                     ["score"] = "Punktestand: ",
                     ["leaderboard"] = "Rangliste",
+                    ["person_left"] = "verbleibende Passagiere:",
                 }
             };
         }

@@ -168,9 +168,9 @@ namespace _scripts.UI
 
         private void UpdateButtons()
         {
-            _vipChecker.Initialize(VipBooster, this);
-            _arrangeChecker.Initialize(ArrangeBooster, this);
-            _changeColorChecker.Initialize(ChangeColorBooster, this);
+           // _vipChecker.Initialize(VipBooster, this);
+          //  _arrangeChecker.Initialize(ArrangeBooster, this);
+          //  _changeColorChecker.Initialize(ChangeColorBooster, this);
         }
 
         private void LoadDataOrInit()
@@ -386,7 +386,7 @@ namespace _scripts.UI
                     MirraSDK.Data.SetInt("ArrangeBooster", ArrangeBooster);
                     MirraSDK.Data.SetInt("ChangeColorBooster", ChangeColorBooster);
                     MirraSDK.Data.Save();
-                    Analytic.BuyInApp(MirraSDK.Data.GetInt("Level").ToString(), beginerKit_150);
+                    Analytic.BuyInApp(MirraSDK.Data.GetInt("Level"), beginerKit_150);
                     break;
 
                 case premiumKit_75:
@@ -399,25 +399,25 @@ namespace _scripts.UI
                     MirraSDK.Data.SetInt("ArrangeBooster", ArrangeBooster);
                     MirraSDK.Data.SetInt("ChangeColorBooster", ChangeColorBooster);
                     MirraSDK.Data.Save();
-                    Analytic.BuyInApp(MirraSDK.Data.GetInt("Level").ToString(), premiumKit_75);
+                    Analytic.BuyInApp(MirraSDK.Data.GetInt("Level"), premiumKit_75);
                     break;
 
                 case gold_300:
                     _coinManager.AddCoinsOnBuy(_gold_300);
                     MirraSDK.Data.Save();
-                    Analytic.BuyInApp(MirraSDK.Data.GetInt("Level").ToString(), gold_300);
+                    Analytic.BuyInApp(MirraSDK.Data.GetInt("Level"), gold_300);
                     break;
 
                 case gold_700:
                     _coinManager.AddCoinsOnBuy(_gold_700);
                     MirraSDK.Data.Save();
-                    Analytic.BuyInApp(MirraSDK.Data.GetInt("Level").ToString(), gold_700);
+                    Analytic.BuyInApp(MirraSDK.Data.GetInt("Level"), gold_700);
                     break;
 
                 case gold_1200:
                     _coinManager.AddCoinsOnBuy(_gold_1200);
                     MirraSDK.Data.Save();
-                    Analytic.BuyInApp(MirraSDK.Data.GetInt("Level").ToString(), gold_1200);
+                    Analytic.BuyInApp(MirraSDK.Data.GetInt("Level"), gold_1200);
                     break;
 
                 case removeAd:
@@ -434,7 +434,7 @@ namespace _scripts.UI
                     MirraSDK.Data.SetInt("ChangeColorBooster", ChangeColorBooster);
                     MirraSDK.Data.Save();
                     OnNoAdsBuy?.Invoke();
-                    Analytic.BuyInApp(MirraSDK.Data.GetInt("Level").ToString(), removeAd);
+                    Analytic.BuyInApp(MirraSDK.Data.GetInt("Level"), removeAd);
                     break;
 
                 default:

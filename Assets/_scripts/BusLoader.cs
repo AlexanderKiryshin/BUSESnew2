@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
 
 namespace _scripts
 {
@@ -35,6 +37,26 @@ namespace _scripts
                     _busGenerator.BusesInFirstArea.Add(bus);
                 }
             }
+        }
+
+        public void SaveBusData(BusData busData)
+        {
+            GameObject[] buses = GameObject.FindGameObjectsWithTag("Bus");
+            busData.buses = new BusPositionAsset[buses.Length];
+
+            for (int i = 0; i < buses.Length; i++)
+            {
+                BusPositionAsset busInfo = new BusPositionAsset
+                {
+                    position = buses[i].transform.position,
+                    rotation = buses[i].transform.rotation,
+                    busType = buses[i].GetComponent<Bus>().Type
+                };
+                busData.buses[i] = busInfo;
+            }
+#if UNITY_EDITOR
+            EditorUtility.SetDirty(busData);
+#endif
         }
     }
 }

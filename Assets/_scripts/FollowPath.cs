@@ -24,8 +24,9 @@ public class FollowPath : MonoBehaviour
     [SerializeField] private float _spawnDelay = 1f;
     [SerializeField] private float _spawnCheckRadius = 0.5f;
     [SerializeField] private LayerMask _layerMask;
-    [SerializeField] private TMP_Text _personsLeftText;
+    [SerializeField] private TextMeshProUGUI _personsLeftText;
     [SerializeField] private List<ColorData> _colorSequence;
+
 
     public event Action<int> PersonsLeftChanged;
 
@@ -43,7 +44,7 @@ public class FollowPath : MonoBehaviour
         StartCoroutine(CreatePersonsCoroutine());
         StartCoroutine(MoveAlongPath());
         _personLeft = _personStartCount;
-        _personsLeftText.text = _personLeft.ToString();
+        _personsLeftText.text = LocalizationManager.Instance.GetText("person_left") + "\n" + _personLeft.ToString();
     }
 
     public void UpdatePersonsLeftCount()
@@ -51,7 +52,7 @@ public class FollowPath : MonoBehaviour
         _personLeft--;
         if (_personLeft < 0)
             _personLeft = 0;
-        _personsLeftText.text = _personLeft.ToString();
+        _personsLeftText.text = LocalizationManager.Instance.GetText("person_left") + "\n" + _personLeft.ToString();
         PersonsLeftChanged?.Invoke(_personLeft);
     }
 
@@ -94,7 +95,7 @@ public class FollowPath : MonoBehaviour
 
         while (createdPersons < _personStartCount)
         {
-            if (!IsPositionOccupied(spawnPosition))
+            if (!IsPositionOccupied(spawnPosition) && _colorSequence.Count>0)
             {
                 Person newPerson = Instantiate(_personPrefab, spawnPosition, Quaternion.identity, _personsParent);
                 personsList.Add(newPerson);
@@ -229,7 +230,7 @@ public class FollowPath : MonoBehaviour
 
     private void AssignColorToPerson(Person person, List<ColorData> colorSequence)
     {
-        // if (_personIndex < 0 || _personIndex >= colorSequence.Count)
+        //if (_personIndex < 0 || _personIndex >= colorSequence.Count)
         // {
         //     Debug.LogWarning($"Index {_personIndex} is out of range for the color sequence.");
         //     return;
@@ -306,7 +307,7 @@ public class FollowPath : MonoBehaviour
 
     public void ReorderPersonsAccordingBusInSpot()
     {
-        List<Material> busMaterials = new List<Material>();
+        List<ColorType> busMaterials = new List<ColorType>();
 
         foreach (var bus in _parkingManager.BusesInSpot)
         {
@@ -314,15 +315,15 @@ public class FollowPath : MonoBehaviour
             for (int i = 0; i < count; i++)
             {
                 if (busMaterials.Count < personsList.Count + _colorSequence.Count)
-                    busMaterials.Add(bus.Color);
+                    busMaterials.Add(bus.ColorType);
             }
         }
 
-        List<Material> allColors = new List<Material>();
-        allColors.AddRange(personsList.Select(person => person.Color));
+        List<ColorType> allColors = new List<ColorType>();
+        allColors.AddRange(personsList.Select(person => person.ColorType));
         foreach (var color in _colorSequence)
         {
-            allColors.Add(color.peopleColor);
+            allColors.Add(color.colorType);
         }
         //allColors.AddRange(_colorSequence);
 
@@ -335,7 +336,7 @@ public class FollowPath : MonoBehaviour
             }
         }
 
-        List<Material> reorderedColors = new List<Material>(busMaterials);
+        List<ColorType> reorderedColors = new List<ColorType>(busMaterials);
         reorderedColors.AddRange(allColors);
 
         int personCount = personsList.Count;
@@ -343,17 +344,14 @@ public class FollowPath : MonoBehaviour
         {
             if (i < personCount)
             {
-                personsList[i].Color = reorderedColors[i];
+                personsList[i].Color = _colorManager.GetPeopleColor(reorderedColors[i]);
+                personsList[i].ColorType = reorderedColors[i];
             }
             else if (i - personCount < _colorSequence.Count)
             {
-                _colorSequence[i - personCount].peopleColor = reorderedColors[i];
+                _colorSequence[i - personCount].peopleColor = _colorManager.GetPeopleColor(reorderedColors[i]);
+                _colorSequence[i - personCount].colorType = reorderedColors[i];
             }
         }
     }
-
-
-
-
-
 }

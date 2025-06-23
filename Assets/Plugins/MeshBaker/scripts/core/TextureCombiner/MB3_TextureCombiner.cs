@@ -193,6 +193,14 @@ namespace DigitalOpus.MB.Core
         }
 
         [SerializeField]
+        protected int _layerTexturePackerFastMesh = -1;
+        public int layerTexturePackerFastMesh
+        {
+            get { return _layerTexturePackerFastMesh; }
+            set { _layerTexturePackerFastMesh = value; }
+        }
+
+        [SerializeField]
         protected int _maxTilingBakeSize = 1024;
         public int maxTilingBakeSize
         {
@@ -426,15 +434,18 @@ namespace DigitalOpus.MB.Core
                 {
                     yield return __CombineTexturesIntoAtlases(progressInfo, result, resultAtlasesAndRects, data, textureEditorMethods);
                 }
-                /*
-            } catch (MissingReferenceException mrex){
+            }
+            /*
+            catch (MissingReferenceException mrex){
                 Debug.LogError("Creating atlases failed a MissingReferenceException was thrown. This is normally only happens when trying to create very large atlases and Unity is running out of Memory. Try changing the 'Texture Packer' to a different option, it may work with an alternate packer. This error is sometimes intermittant. Try baking again.");
                 Debug.LogError(mrex);
             } catch (Exception ex){
-                Debug.LogError(ex);*/
+                Debug.LogError(ex);
             }
+            */
             finally
             {
+
                 _destroyAllTemporaryTextures();
                 _restoreProceduralMaterials();
                 if (textureEditorMethods != null)
@@ -444,7 +455,6 @@ namespace DigitalOpus.MB.Core
                 }
                 if (LOG_LEVEL >= MB2_LogLevel.debug) Debug.Log("===== Done creating atlases for " + resultMaterial + " Total time to create atlases " + sw.Elapsed.ToString());
             }
-            //result.success = success;
         }
 
         MB3_TextureCombinerPipeline.TexturePipelineData LoadPipelineData(Material resultMaterial,
@@ -482,6 +492,7 @@ namespace DigitalOpus.MB.Core
             data._fixOutOfBoundsUVs = _fixOutOfBoundsUVs;
             data._maxTilingBakeSize = _maxTilingBakeSize;
             data._packingAlgorithm = _packingAlgorithm;
+            data._layerTexturePackerFastV2 = _layerTexturePackerFastMesh;
             data._meshBakerTexturePackerForcePowerOfTwo = _meshBakerTexturePackerForcePowerOfTwo;
             data._customShaderPropNames = _customShaderPropNames;
             data._normalizeTexelDensity = _normalizeTexelDensity;
@@ -493,6 +504,7 @@ namespace DigitalOpus.MB.Core
             data.allObjsToMesh = objsToMesh;
             data.allowedMaterialsFilter = allowedMaterialsFilter;
             data.texPropertyNames = texPropertyNames;
+            data.colorSpace = MBVersion.GetProjectColorSpace();
             return data;
         }
 
@@ -519,28 +531,6 @@ namespace DigitalOpus.MB.Core
                 yield break;
             }
 
-            if (MB3_MeshCombiner.EVAL_VERSION)
-            {
-                bool usesAllowedShaders = true;
-                for (int i = 0; i < data.distinctMaterialTextures.Count; i++)
-                {
-                    for (int j = 0; j < data.distinctMaterialTextures[i].matsAndGOs.mats.Count; j++)
-                    {
-                        if (!data.distinctMaterialTextures[i].matsAndGOs.mats[j].mat.shader.name.EndsWith("Diffuse") &&
-                            !data.distinctMaterialTextures[i].matsAndGOs.mats[j].mat.shader.name.EndsWith("Bumped Diffuse"))
-                        {
-                            Debug.LogError("The free version of Mesh Baker only works with Diffuse and Bumped Diffuse Shaders. The full version can be used with any shader. Material " + data.distinctMaterialTextures[i].matsAndGOs.mats[j].mat.name + " uses shader " + data.distinctMaterialTextures[i].matsAndGOs.mats[j].mat.shader.name);
-                            usesAllowedShaders = false;
-                        }
-                    }
-                }
-                if (!usesAllowedShaders)
-                {
-                    result.success = false;
-                    yield break;
-                }
-            }
-
             //Textures in each material (_mainTex, Bump, Spec ect...) must be same size
             //Calculate the best sized to use. Takes into account tiling
             //if only one texture in atlas re-uses original sizes	
@@ -553,6 +543,12 @@ namespace DigitalOpus.MB.Core
             //buildAndSaveAtlases
             StringBuilder report = pipeline.GenerateReport(data);
             MB_ITextureCombinerPacker texturePaker = pipeline.CreatePacker(data.OnlyOneTextureInAtlasReuseTextures(), data._packingAlgorithm);
+            if (!texturePaker.Validate(data))
+            {
+                result.success = false;
+                yield break;
+            }
+
             yield return texturePaker.ConvertTexturesToReadableFormats(progressInfo, result, data, this, textureEditorMethods, LOG_LEVEL);
             if (!result.success)
             {
@@ -597,9 +593,9 @@ namespace DigitalOpus.MB.Core
         }
 
         //used to track temporary textures that were created so they can be destroyed
-        public Texture2D _createTemporaryTexture(string propertyName, int w, int h, TextureFormat texFormat, bool mipMaps)
+        public Texture2D _createTemporaryTexture(string propertyName, int w, int h, TextureFormat texFormat, bool mipMaps, bool linear)
         {
-            Texture2D t = new Texture2D(w, h, texFormat, mipMaps);
+            Texture2D t = new Texture2D(w, h, texFormat, mipMaps, linear);
             t.name = string.Format("tmp{0}_{1}x{2}", _temporaryTextures.Count, w, h);
             MB_Utility.setSolidColor(t, Color.clear);
             TemporaryTexture txx = new TemporaryTexture(propertyName, t);
@@ -794,6 +790,12 @@ namespace DigitalOpus.MB.Core
                 outstr = "====== There are possible problems with these meshes that may prevent them from combining well. TREATMENT SUGGESTIONS (copy and paste to text editor if too big) =====\n" + sb.ToString();
             }
             Debug.Log(outstr);
+        }
+
+        public static bool ShouldTextureBeLinear(ShaderTextureProperty shaderTextureProperty)
+        {
+            if (shaderTextureProperty.isNormalMap) return true;
+            else return false;
         }
 
         string PrintList(List<GameObject> gos)

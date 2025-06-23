@@ -38,5 +38,10 @@ public class BusGeneratorEditor : Editor
         {
             generator.LoadBusData();
         }
+        if (GUILayout.Button("SaveBusData"))
+        {
+            generator.SaveBusData();
+        }
+
     }
 }

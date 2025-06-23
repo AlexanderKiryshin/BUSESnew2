@@ -12,9 +12,9 @@ public class MB3_BatchPrefabBaker : MonoBehaviour {
         public GameObject resultPrefab;
     }
 
-    public MB3_PrefabBakerRow[] prefabRows;
+    public MB3_PrefabBakerRow[] prefabRows = new MB3_PrefabBakerRow[0];
 
-    public string outputPrefabFolder;
+    public string outputPrefabFolder = "";
 
     [ContextMenu("Create Instances For Prefab Rows")]
     public void CreateSourceAndResultPrefabInstances()

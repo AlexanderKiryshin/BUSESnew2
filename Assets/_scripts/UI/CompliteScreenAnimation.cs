@@ -19,8 +19,8 @@ public class CompliteScreenAnimation : MonoBehaviour
 
     private void Awake()
     {
-        Timing.RunCoroutine(_StarAnimation().CancelWith(gameObject));
-        Timing.RunCoroutine(ResetSalut().CancelWith(gameObject));
+        //Timing.RunCoroutine(_StarAnimation().CancelWith(gameObject));
+        //Timing.RunCoroutine(ResetSalut().CancelWith(gameObject));
     }
 
     private IEnumerator<float> _StarAnimation()

@@ -62,6 +62,7 @@ namespace DigitalOpus.MB.Core
         /// </summary>
         public int isImportedAsNormalMap { get; private set; }
 
+        /*
         public MeshBakerMaterialTexture() { }
         public MeshBakerMaterialTexture(Texture tx)
         {
@@ -82,6 +83,7 @@ namespace DigitalOpus.MB.Core
                 Debug.LogError("An error occured. Texture must be Texture2D " + tx);
             }
         }
+        */
 
         public MeshBakerMaterialTexture(Texture tx, Vector2 matTilingOffset, Vector2 matTilingScale, float texelDens, int isImportedAsNormalMap)
         {
@@ -644,10 +646,11 @@ namespace DigitalOpus.MB.Core
             }
         }
 
-        public void CreateColoredTexToReplaceNull(string propName, int propIdx, bool considerMeshUVs, MB3_TextureCombiner combiner, Color col)
+        public void CreateColoredTexToReplaceNull(string propName, int propIdx, bool considerMeshUVs, MB3_TextureCombiner combiner, Color col, bool isLinear)
         {
             MeshBakerMaterialTexture matTex = ts[propIdx];
-            matTex.t = combiner._createTemporaryTexture(propName, 16, 16, TextureFormat.ARGB32, true);
+            Texture2D tt = combiner._createTemporaryTexture(propName, 16, 16, TextureFormat.ARGB32, true, isLinear);
+            matTex.t = tt;
             MB_Utility.setSolidColor(matTex.GetTexture2D(), col);
         }
 

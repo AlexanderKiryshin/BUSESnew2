@@ -19,29 +19,39 @@ using DigitalOpus.MB.Core;
 /// <summary>
 /// Abstract root of the mesh combining classes
 /// </summary>
-public abstract class MB3_MeshBakerCommon : MB3_MeshBakerRoot {	
-	
-	//todo should be list of <Renderer>
-	public List<GameObject> objsToMesh;
-	
-	public abstract MB3_MeshCombiner meshCombiner{
-		get;
-	}
-	
-	public bool useObjsToMeshFromTexBaker = true;
+public abstract class MB3_MeshBakerCommon : MB3_MeshBakerRoot {
 
-	public bool clearBuffersAfterBake = true;
+    //todo should be list of <Renderer>
+    public List<GameObject> objsToMesh;
+
+    public abstract MB3_MeshCombiner meshCombiner {
+        get;
+    }
+
+    public bool useObjsToMeshFromTexBaker = true;
+
+    public bool clearBuffersAfterBake = true;
 
     //t0do put this in the batch baker
-    public string bakeAssetsInPlaceFolderPath;	
-	
-	[HideInInspector] public GameObject resultPrefab;
+    public string bakeAssetsInPlaceFolderPath;
+
+    [HideInInspector] public GameObject resultPrefab;
+
+    /// <summary>
+    /// If checked then an instance will be left in the scene after baking. Otherwise scene instance will be deleted after prefab is baked.
+    /// </summary>
+    [HideInInspector] public bool resultPrefabLeaveInstanceInSceneAfterBake;
+
+    /// <summary>
+    /// Optional, combined mesh renderers will be children of this object if it exists.
+    /// </summary>
+    [HideInInspector] public Transform parentSceneObject;
 
 #if UNITY_EDITOR
     [ContextMenu("Create Mesh Baker Settings Asset")]
     public void CreateMeshBakerSettingsAsset()
     {
-        
+
         string newFilePath = UnityEditor.EditorUtility.SaveFilePanelInProject("New Mesh Baker Settings", "MeshBakerSettings", "asset", "Create a new Mesh Baker Settings Asset");
         if (newFilePath != null)
         {
@@ -74,7 +84,7 @@ public abstract class MB3_MeshBakerCommon : MB3_MeshBakerRoot {
             return;
         }
 
-        if (meshCombiner.settingsHolder is UnityEngine.Object) UnityEditor.Undo.RecordObject((UnityEngine.Object) meshCombiner.settingsHolder, "Undo copy settings");
+        if (meshCombiner.settingsHolder is UnityEngine.Object) UnityEditor.Undo.RecordObject((UnityEngine.Object)meshCombiner.settingsHolder, "Undo copy settings");
         _CopySettings(meshCombiner, meshCombiner.settingsHolder.GetMeshBakerSettings());
         Debug.Log("Copied settings from this Mesh Baker to the assigned Shared Settings asset.");
         if (meshCombiner.settingsHolder is UnityEngine.Object) UnityEditor.EditorUtility.SetDirty((UnityEngine.Object)meshCombiner.settingsHolder);
@@ -103,35 +113,35 @@ public abstract class MB3_MeshBakerCommon : MB3_MeshBakerRoot {
     }
 #endif
 
-    public override MB2_TextureBakeResults textureBakeResults{
-		get {return meshCombiner.textureBakeResults; }
-		set {meshCombiner.textureBakeResults = value; }
-	}
-	
-	public override List<GameObject> GetObjectsToCombine(){
-		if (useObjsToMeshFromTexBaker){
-			MB3_TextureBaker tb = gameObject.GetComponent<MB3_TextureBaker>();
-			if (tb == null) tb = gameObject.transform.parent.GetComponent<MB3_TextureBaker>();
-			if (tb != null) {
-				return tb.GetObjectsToCombine();	
-			} else {
-				Debug.LogWarning("Use Objects To Mesh From Texture Baker was checked but no texture baker");
-				return new List<GameObject>();
-			}
-		} else {
-			if (objsToMesh == null) objsToMesh = new List<GameObject>();
-			return objsToMesh;
-		}
-	}
+    public override MB2_TextureBakeResults textureBakeResults {
+        get { return meshCombiner.textureBakeResults; }
+        set { meshCombiner.textureBakeResults = value; }
+    }
 
-	public void EnableDisableSourceObjectRenderers(bool show){
-		for (int i = 0; i < GetObjectsToCombine().Count; i++){
-			GameObject go = GetObjectsToCombine()[i];
-			if (go != null){
-				Renderer mr = MB_Utility.GetRenderer(go);
-				if (mr != null){
-					mr.enabled = show;
-				}
+    public override List<GameObject> GetObjectsToCombine() {
+        if (useObjsToMeshFromTexBaker) {
+            MB3_TextureBaker tb = gameObject.GetComponent<MB3_TextureBaker>();
+            if (tb == null) tb = gameObject.transform.parent.GetComponent<MB3_TextureBaker>();
+            if (tb != null) {
+                return tb.GetObjectsToCombine();
+            } else {
+                Debug.LogWarning("Use Objects To Mesh From Texture Baker was checked but no texture baker");
+                return new List<GameObject>();
+            }
+        } else {
+            if (objsToMesh == null) objsToMesh = new List<GameObject>();
+            return objsToMesh;
+        }
+    }
+
+    public void EnableDisableSourceObjectRenderers(bool show) {
+        for (int i = 0; i < GetObjectsToCombine().Count; i++) {
+            GameObject go = GetObjectsToCombine()[i];
+            if (go != null) {
+                Renderer mr = MB_Utility.GetRenderer(go);
+                if (mr != null) {
+                    mr.enabled = show;
+                }
 
                 LODGroup lodG = mr.GetComponentInParent<LODGroup>();
                 if (lodG != null)
@@ -156,20 +166,26 @@ public abstract class MB3_MeshBakerCommon : MB3_MeshBakerRoot {
                     }
                 }
             }
-		}
-	}
+        }
+    }
 
-/// <summary>
-///  Clears the meshs and mesh related data but does not destroy it.
-/// </summary>
-	public virtual void ClearMesh(){
-		meshCombiner.ClearMesh();
-	}
+    /// <summary>
+    ///  Clears the meshs and mesh related data but does not destroy it.
+    /// </summary>
+    public virtual void ClearMesh() 
+    {
+        meshCombiner.ClearMesh();
+    }
 
-/// <summary>
-///  Clears and desroys the mesh. Clears mesh related data.
-/// </summary>		
-	public virtual void DestroyMesh(){
+    public virtual void ClearMesh(MB2_EditorMethodsInterface editorMethods)
+    {
+        meshCombiner.ClearMesh(editorMethods);
+    }
+
+    /// <summary>
+    ///  Clears and desroys the mesh. Clears mesh related data.
+    /// </summary>		
+    public virtual void DestroyMesh(){
 		meshCombiner.DestroyMesh();
 	}
 

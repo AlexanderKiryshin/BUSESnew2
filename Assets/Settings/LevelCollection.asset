@@ -60,6 +60,6 @@ MonoBehaviour:
     ColorsCount: 8
   - busData: {fileID: 0}
     SmallBusCount: 24
-    MediumBusCount: 24
+    MediumBusCount: 20
     LargeBusCount: 20
     ColorsCount: 8

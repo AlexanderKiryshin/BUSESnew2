@@ -93,9 +93,15 @@ namespace DigitalOpus.MB.Core {
             {
                 if (_targetRenderer != null && _targetRenderer != value)
                 {
-                    Debug.LogWarning("Previous targetRenderer was not null. Combined mesh may be being used by more than one Renderer");
+                    Debug.LogWarning("Previous targetRenderer was not null. Combined mesh may be shared by more than one Renderer");
                 }
+
                 _targetRenderer = value;
+
+                if (value != null && MB_Utility.IsSceneInstance(value.gameObject) && value.transform.parent != null)
+                {
+                    _resultSceneObject = value.transform.parent.gameObject;
+                }
             }
         }
 
@@ -153,44 +159,73 @@ namespace DigitalOpus.MB.Core {
         }
 
         //-----------------------
-        [SerializeField] protected MB_RenderType _renderType;
-        public virtual MB_RenderType renderType {
-            get { return _renderType; }
-            set { _renderType = value; }
-        }
-
         [SerializeField] protected MB2_OutputOptions _outputOption;
+
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.outputOption NOT this.outputOption THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public virtual MB2_OutputOptions outputOption
         {
             get { return _outputOption; }
             set { _outputOption = value; }
         }
 
+        [SerializeField] protected MB_RenderType _renderType;
+
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.outputOption NOT this.outputOption THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
+        public virtual MB_RenderType renderType {
+            get { return _renderType; }
+            set { _renderType = value; }
+        }
+
         [SerializeField] protected MB2_LightmapOptions _lightmapOption = MB2_LightmapOptions.ignore_UV2;
+
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.lightmapOption NOT this.lightmapOption THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public virtual MB2_LightmapOptions lightmapOption {
             get { return _lightmapOption; }
-            set { _lightmapOption = value; }
+            set {
+                _lightmapOption = value; 
+            }
         }
 
         [SerializeField] protected bool _doNorm = true;
+
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.doNorm NOT this.doNorm THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public virtual bool doNorm {
             get { return _doNorm; }
             set { _doNorm = value; }
         }
 
+
         [SerializeField] protected bool _doTan = true;
+
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.doTan NOT this.doTan THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public virtual bool doTan {
             get { return _doTan; }
             set { _doTan = value; }
         }
 
         [SerializeField] protected bool _doCol;
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.doCol NOT this.doCol THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public virtual bool doCol {
             get { return _doCol; }
             set { _doCol = value; }
         }
 
         [SerializeField] protected bool _doUV = true;
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.doUV NOT this.doUV THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public virtual bool doUV {
             get { return _doUV; }
             set { _doUV = value; }
@@ -205,22 +240,33 @@ namespace DigitalOpus.MB.Core {
         }
 
         public virtual bool doUV2() {
-            return _lightmapOption == MB2_LightmapOptions.copy_UV2_unchanged || _lightmapOption == MB2_LightmapOptions.preserve_current_lightmapping || _lightmapOption == MB2_LightmapOptions.copy_UV2_unchanged_to_separate_rects;
+            bool result = settings.lightmapOption == MB2_LightmapOptions.copy_UV2_unchanged || settings.lightmapOption == MB2_LightmapOptions.preserve_current_lightmapping || settings.lightmapOption == MB2_LightmapOptions.copy_UV2_unchanged_to_separate_rects;
+            return result;
         }
 
+
         [SerializeField] protected bool _doUV3;
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.doUV3 NOT this.doUV3 THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public virtual bool doUV3 {
             get { return _doUV3; }
             set { _doUV3 = value; }
         }
 
         [SerializeField] protected bool _doUV4;
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.doUV4 NOT this.doUV4 THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public virtual bool doUV4 {
             get { return _doUV4; }
             set { _doUV4 = value; }
         }
 
         [SerializeField] protected bool _doUV5;
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.doUV5 NOT this.doUV5 THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public virtual bool doUV5
         {
             get { return _doUV5; }
@@ -228,6 +274,9 @@ namespace DigitalOpus.MB.Core {
         }
 
         [SerializeField] protected bool _doUV6;
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.doUV6 NOT this.doUV6 THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public virtual bool doUV6
         {
             get { return _doUV6; }
@@ -235,6 +284,9 @@ namespace DigitalOpus.MB.Core {
         }
 
         [SerializeField] protected bool _doUV7;
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.doUV7 NOT this.doUV7 THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public virtual bool doUV7
         {
             get { return _doUV7; }
@@ -242,6 +294,9 @@ namespace DigitalOpus.MB.Core {
         }
 
         [SerializeField] protected bool _doUV8;
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.doUV8 NOT this.doUV8 THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public virtual bool doUV8
         {
             get { return _doUV8; }
@@ -250,6 +305,9 @@ namespace DigitalOpus.MB.Core {
 
         [SerializeField]
         protected bool _doBlendShapes;
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.doBlendShapes NOT this.doBlendShapes THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public virtual bool doBlendShapes
         {
             get { return _doBlendShapes; }
@@ -259,6 +317,9 @@ namespace DigitalOpus.MB.Core {
         [UnityEngine.Serialization.FormerlySerializedAs("_recenterVertsToBoundsCenter")]
         [SerializeField]
         protected MB_MeshPivotLocation _pivotLocationType;
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.pivotLocationType NOT this.pivotLocationType THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public virtual MB_MeshPivotLocation pivotLocationType
         {
             get { return _pivotLocationType; }
@@ -267,24 +328,20 @@ namespace DigitalOpus.MB.Core {
 
         [SerializeField]
         protected Vector3 _pivotLocation;
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.pivotLocation NOT this.pivotLocation THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public virtual Vector3 pivotLocation
         {
             get { return _pivotLocation; }
             set { _pivotLocation = value; }
         }
 
-        /*
-        [SerializeField]
-        protected bool _recenterVertsToBoundsCenter = false;
-        public virtual bool recenterVertsToBoundsCenter
-        {
-            get { return _recenterVertsToBoundsCenter; }
-            set { _recenterVertsToBoundsCenter = value; }
-        }
-        */
-
         [SerializeField]
         protected bool _clearBuffersAfterBake = false;
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.clearBuffersAfterBake NOT this.clearBuffersAfterBake THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public virtual bool clearBuffersAfterBake
         {
             get { return _clearBuffersAfterBake; }
@@ -296,6 +353,9 @@ namespace DigitalOpus.MB.Core {
 
         [SerializeField]
         public bool _optimizeAfterBake = true;
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.optimizeAfterBake NOT this.optimizeAfterBake THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public bool optimizeAfterBake
         {
             get { return _optimizeAfterBake; }
@@ -305,6 +365,9 @@ namespace DigitalOpus.MB.Core {
         [SerializeField]
         [UnityEngine.Serialization.FormerlySerializedAs("uv2UnwrappingParamsHardAngle")]
         protected float _uv2UnwrappingParamsHardAngle = 60f;
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.uv2UnwrappingParamsHardAngle NOT this.uv2UnwrappingParamsHardAngle THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public float uv2UnwrappingParamsHardAngle
         {
             get { return _uv2UnwrappingParamsHardAngle; }
@@ -314,6 +377,9 @@ namespace DigitalOpus.MB.Core {
         [SerializeField]
         [UnityEngine.Serialization.FormerlySerializedAs("uv2UnwrappingParamsPackMargin")]
         protected float _uv2UnwrappingParamsPackMargin = .005f;
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.uv2UnwrappingParamsPackMargin NOT this.uv2UnwrappingParamsPackMargin THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public float uv2UnwrappingParamsPackMargin
         {
             get { return _uv2UnwrappingParamsPackMargin; }
@@ -321,8 +387,32 @@ namespace DigitalOpus.MB.Core {
         }
 
         [SerializeField]
-        protected UnityEngine.Object _assignToMeshCustomizer;
+        protected bool _smrNoExtraBonesWhenCombiningMeshRenderers;
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.smrNoExtraBonesWhenCombiningMeshRenderers NOT this.smrNoExtraBonesWhenCombiningMeshRenderers THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
+        public bool smrNoExtraBonesWhenCombiningMeshRenderers
+        {
+            get { return _smrNoExtraBonesWhenCombiningMeshRenderers; }
+            set { _smrNoExtraBonesWhenCombiningMeshRenderers = value; }
+        }
 
+        [SerializeField]
+        protected bool _smrMergeBlendShapesWithSameNames = false;
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.smrMergeBlendShapesWithSameNames NOT this.smrMergeBlendShapesWithSameNames THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
+        public bool smrMergeBlendShapesWithSameNames
+        {
+            get { return _smrMergeBlendShapesWithSameNames; }
+            set { _smrMergeBlendShapesWithSameNames = value; }
+        }
+
+        [SerializeField]
+        protected UnityEngine.Object _assignToMeshCustomizer;
+        /// <summary>
+        /// ALWAYS ACCESS THROUGH this.settings.assignToMeshCustomizer NOT this.assignToMeshCustomizer THERE MAY BE A SETTINGS HOLDER ASSIGNED.
+        /// </summary>
         public IAssignToMeshCustomizer assignToMeshCustomizer
         {
             get
@@ -347,6 +437,7 @@ namespace DigitalOpus.MB.Core {
         public abstract int GetLightmapIndex();
 		public abstract void ClearBuffers();
 		public abstract void ClearMesh();
+        public abstract void ClearMesh(MB2_EditorMethodsInterface editorMethods);
         public abstract void DisposeRuntimeCreated();
         public abstract void DestroyMesh();
 		public abstract void DestroyMeshEditor(MB2_EditorMethodsInterface editorMethods);

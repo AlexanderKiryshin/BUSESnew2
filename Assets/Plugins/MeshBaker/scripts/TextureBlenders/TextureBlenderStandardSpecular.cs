@@ -284,6 +284,7 @@ namespace DigitalOpus.MB.Core
                     { //need try because can't garantee _Color is a color
                         Color c = mat.GetColor("_Color");
                         sourceMaterialPropertyCache.CacheMaterialProperty(mat, "_Color", c);
+                        return c;
                     }
                     catch (Exception) { }
                     return Color.white;
@@ -306,6 +307,7 @@ namespace DigitalOpus.MB.Core
                         }
                         sourceMaterialPropertyCache.CacheMaterialProperty(mat, "_SpecColor", c);
                         sourceMaterialPropertyCache.CacheMaterialProperty(mat, "_Glossiness", c.a);
+                        return c;
                     }
                     catch (Exception) { }
                 }
@@ -331,6 +333,7 @@ namespace DigitalOpus.MB.Core
                             {
                                 Color c = mat.GetColor("_EmissionColor");
                                 sourceMaterialPropertyCache.CacheMaterialProperty(mat, "_EmissionColor", c);
+                                return c;
                             }
                             catch (Exception) { }
                         }

@@ -335,7 +335,6 @@ namespace DigitalOpus.MB.Core
 
         public MB3_TextureCombinerNonTextureProperties(MB2_LogLevel ll, bool considerNonTextureProps)
         {
-            LOG_LEVEL = ll;
             _considerNonTextureProperties = considerNonTextureProps;
             textureProperty2DefaultColorMap = new Dictionary<string, Color>();
             for (int i = 0; i < defaultTextureProperty2DefaultColorMap.Length; i++)

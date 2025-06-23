@@ -53,6 +53,8 @@ namespace DigitalOpus.MB.Core
             public int numVerts;
             public int numBlendShapes;
 
+            public bool isSkinnedMeshWithBones = false; // it is possible for a skinned mesh to have blend shapes but no bones.
+
             //distinct list of bones in the bones array
             public int[] indexesOfBonesUsed = new int[0];
 
@@ -115,17 +117,20 @@ namespace DigitalOpus.MB.Core
             public bool _beingDeleted = false;
             public int _triangleIdxAdjustment = 0;
 
-            //used so we don't have to call GetBones and GetBindposes twice
+            // temporary buffers used within a single bake. Not cached between bakes
+            // used so we don't have to call GetBones and GetBindposes multiple Times
             [NonSerialized]
             public SerializableIntArray[] _tmpSubmeshTris;
+
+            // temporary buffers for bone baking
             [NonSerialized]
-            public Transform[] _tmpCachedBones;
+            public Transform[] _tmpSMR_CachedBones;
             [NonSerialized]
-            public Matrix4x4[] _tmpCachedBindposes;
+            public Matrix4x4[] _tmpSMR_CachedBindposes;
             [NonSerialized]
-            public BoneWeight[] _tmpCachedBoneWeights;
+            public BoneWeight[] _tmpSMR_CachedBoneWeights;
             [NonSerialized]
-            public int[] _tmpIndexesOfSourceBonesUsed;
+            public int[] _tmpSMRIndexesOfSourceBonesUsed;
 
             public int CompareTo(MB_DynamicGameObject b)
             {
@@ -344,7 +349,7 @@ namespace DigitalOpus.MB.Core
                 return mc.colors;
             }
 
-            internal Matrix4x4[] GetBindposes(Renderer r)
+            internal Matrix4x4[] GetBindposes(Renderer r, out bool isSkinnedMeshWithBones)
             {
                 MeshChannels mc;
                 Mesh m = MB_Utility.GetMesh(r.gameObject);
@@ -353,14 +358,27 @@ namespace DigitalOpus.MB.Core
                     mc = new MeshChannels();
                     meshID2MeshChannels.Add(m.GetInstanceID(), mc);
                 }
+
                 if (mc.bindPoses == null)
                 {
-                    mc.bindPoses = _getBindPoses(r);
+                    mc.bindPoses = _getBindPoses(r, out isSkinnedMeshWithBones);
+                } else
+                {
+                    if (r is SkinnedMeshRenderer &&
+                        mc.bindPoses.Length > 0)
+                    {
+                        isSkinnedMeshWithBones = true;
+                    } else
+                    {
+                        isSkinnedMeshWithBones = false;
+                        if (r is SkinnedMeshRenderer) Debug.Assert(m.blendShapeCount > 0, "Skinned Mesh Renderer " + r + " had no bones and no blend shapes");
+                    }
                 }
+
                 return mc.bindPoses;
             }
 
-            internal BoneWeight[] GetBoneWeights(Renderer r, int numVertsInMeshBeingAdded)
+            internal BoneWeight[] GetBoneWeights(Renderer r, int numVertsInMeshBeingAdded, bool isSkinnedMeshWithBones)
             {
                 MeshChannels mc;
                 Mesh m = MB_Utility.GetMesh(r.gameObject);
@@ -371,7 +389,7 @@ namespace DigitalOpus.MB.Core
                 }
                 if (mc.boneWeights == null)
                 {
-                    mc.boneWeights = _getBoneWeights(r, numVertsInMeshBeingAdded);
+                    mc.boneWeights = _getBoneWeights(r, numVertsInMeshBeingAdded, isSkinnedMeshWithBones);
                 }
                 return mc.boneWeights;
             }
@@ -393,58 +411,7 @@ namespace DigitalOpus.MB.Core
 
             internal MBBlendShape[] GetBlendShapes(Mesh m, int gameObjectID, GameObject gameObject)
             {
-                if (MBVersion.GetMajorVersion() > 5 ||
-                ( MBVersion.GetMajorVersion() == 5 && MBVersion.GetMinorVersion() >= 3))
-                {
-
-                    MeshChannels mc;
-                    if (!meshID2MeshChannels.TryGetValue(m.GetInstanceID(), out mc))
-                    {
-                        mc = new MeshChannels();
-                        meshID2MeshChannels.Add(m.GetInstanceID(), mc);
-                    }
-                    if (mc.blendShapes == null)
-                    {
-                        MBBlendShape[] shapes = new MBBlendShape[m.blendShapeCount];
-                        int arrayLen = m.vertexCount;
-                        for (int i = 0; i < shapes.Length; i++)
-                        {
-                            MBBlendShape shape = shapes[i] = new MBBlendShape();
-                            shape.frames = new MBBlendShapeFrame[MBVersion.GetBlendShapeFrameCount(m, i)];
-                            shape.name = m.GetBlendShapeName(i);
-                            shape.indexInSource = i;
-                            shape.gameObjectID = gameObjectID;
-                            shape.gameObject = gameObject;
-                            for (int j = 0; j < shape.frames.Length; j++)
-                            {
-                                MBBlendShapeFrame frame = shape.frames[j] = new MBBlendShapeFrame();
-                                frame.frameWeight = MBVersion.GetBlendShapeFrameWeight(m, i, j);
-                                frame.vertices = new Vector3[arrayLen];
-                                frame.normals = new Vector3[arrayLen];
-                                frame.tangents = new Vector3[arrayLen];
-                                MBVersion.GetBlendShapeFrameVertices(m, i, j, frame.vertices, frame.normals, frame.tangents);
-                            }
-                        }
-                        mc.blendShapes = shapes;
-                        return mc.blendShapes;
-                    }
-                    else
-                    { //copy cached blend shapes assigning a different gameObjectID
-                        MBBlendShape[] shapes = new MBBlendShape[mc.blendShapes.Length];
-                        for (int i = 0; i < shapes.Length; i++)
-                        {
-                            shapes[i] = new MBBlendShape();
-                            shapes[i].name = mc.blendShapes[i].name;
-                            shapes[i].indexInSource = mc.blendShapes[i].indexInSource;
-                            shapes[i].frames = mc.blendShapes[i].frames;
-                            shapes[i].gameObjectID = gameObjectID;
-                            shapes[i].gameObject = gameObject;
-                        }
-                        return shapes;
-                    }
-                } else {
-                    return new MBBlendShape[0];
-                }
+                return MB3_MeshCombinerSingle.GetBlendShapes(m, gameObjectID, gameObject, meshID2MeshChannels);
             }
 
             Color[] _getMeshColors(Mesh m)
@@ -527,32 +494,51 @@ namespace DigitalOpus.MB.Core
                 return uv;
             }
 
-            public static Matrix4x4[] _getBindPoses(Renderer r)
+            public static Matrix4x4[] _getBindPoses(Renderer r, out bool isSkinnedMeshWithBones)
             {
+                
+                Matrix4x4[] poses = null;
+                isSkinnedMeshWithBones = r is SkinnedMeshRenderer;
                 if (r is SkinnedMeshRenderer)
                 {
-                    return ((SkinnedMeshRenderer)r).sharedMesh.bindposes;
+                    poses = ((SkinnedMeshRenderer) r).sharedMesh.bindposes;
+                    if (poses.Length == 0)
+                    {
+                        Mesh m = MB_Utility.GetMesh(r.gameObject);
+                        if (m.blendShapeCount > 0)
+                        {
+                            isSkinnedMeshWithBones = false;
+                        } else
+                        {
+                            Debug.LogError("Skinned mesh " + r + " had no bindposes AND no blend shapes");
+                        }
+                    }
                 }
-                else if (r is MeshRenderer)
+                
+                if (r is MeshRenderer || 
+                   (r is SkinnedMeshRenderer && !isSkinnedMeshWithBones)) // It is possible for a skinned mesh to have blend shapes but no bones. These need to be treated like MeshRenderer meshes.
                 {
                     Matrix4x4 bindPose = Matrix4x4.identity;
-                    Matrix4x4[] poses = new Matrix4x4[1];
+                    poses = new Matrix4x4[1];
                     poses[0] = bindPose;
-                    return poses;
                 }
-                else {
+                
+                if (poses == null) {
                     Debug.LogError("Could not _getBindPoses. Object does not have a renderer");
                     return null;
                 }
+
+                return poses;
             }
 
-            public static BoneWeight[] _getBoneWeights(Renderer r, int numVertsInMeshBeingAdded)
+            public static BoneWeight[] _getBoneWeights(Renderer r, int numVertsInMeshBeingAdded, bool isSkinnedMeshWithBones)
             {
-                if (r is SkinnedMeshRenderer)
+                if (isSkinnedMeshWithBones)
                 {
                     return ((SkinnedMeshRenderer)r).sharedMesh.boneWeights;
                 }
-                else if (r is MeshRenderer)
+                else if (r is MeshRenderer ||
+                    (r is SkinnedMeshRenderer && !isSkinnedMeshWithBones)) // It is possible for a skinned mesh to have blend shapes but no bones. These need to be treated like MeshRenderer meshes
                 {
                     BoneWeight bw = new BoneWeight();
                     bw.boneIndex0 = bw.boneIndex1 = bw.boneIndex2 = bw.boneIndex3 = 0;

@@ -262,7 +262,7 @@ namespace DigitalOpus.MB.Core{
         }
 
         //normalize atlases so that that rects are 0 to 1
-        public void normalizeRects(AtlasPackingResult rr, AtlasPadding padding)
+        public void ConvertToRectsWithoutPaddingAndNormalize01(AtlasPackingResult rr, AtlasPadding padding)
         {
             for (int i = 0; i < rr.rects.Length; i++)
             {
@@ -940,7 +940,7 @@ namespace DigitalOpus.MB.Core{
                 res.srcImgIdxs = srcImgIdx;
                 res.CalcUsedWidthAndHeight();
                 rs.Add(res);
-                normalizeRects(res, paddings[i]);
+                ConvertToRectsWithoutPaddingAndNormalize01(res, paddings[i]);
                 if (LOG_LEVEL >= MB2_LogLevel.debug) MB2_Log.LogDebug(String.Format("Done GetRects "));
             }
 

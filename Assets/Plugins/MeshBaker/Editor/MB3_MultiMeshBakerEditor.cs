@@ -39,9 +39,9 @@ namespace DigitalOpus.MB.MBEditor
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                if (e == null) e = null; //Do nothing supress compiler warning
+                if (ex == null) ex = null; //Do nothing supress compiler warning
             }
             GameObject nmb = new GameObject("TextureBaker (" + largest + ")");
             nmb.transform.position = Vector3.zero;

@@ -130,19 +130,6 @@ namespace DigitalOpus.MB.Core
             set { _pivotLocation = value; }
         }
 
-        //[SerializeField]
-        //protected bool _recenterVertsToBoundsCenter = false;
-        /*
-        public virtual bool recenterVertsToBoundsCenter
-        {
-            get
-            {
-                if (_pivotLocationType == MB_MeshPivotLocation.boundsCenter) return true;
-                else return false;
-            }
-        }
-        */
-
         [SerializeField]
         protected bool _clearBuffersAfterBake = false;
         public bool clearBuffersAfterBake
@@ -173,6 +160,22 @@ namespace DigitalOpus.MB.Core
         {
             get { return _uv2UnwrappingParamsPackMargin; }
             set { _uv2UnwrappingParamsPackMargin = value; }
+        }
+
+        [SerializeField]
+        protected bool _smrNoExtraBonesWhenCombiningMeshRenderers;
+        public bool smrNoExtraBonesWhenCombiningMeshRenderers
+        {
+            get { return _smrNoExtraBonesWhenCombiningMeshRenderers; }
+            set { _smrNoExtraBonesWhenCombiningMeshRenderers = value; }
+        }
+
+        [SerializeField]
+        protected bool _smrMergeBlendShapesWithSameNames = false;
+        public bool smrMergeBlendShapesWithSameNames
+        {
+            get { return _smrMergeBlendShapesWithSameNames; }
+            set { _smrMergeBlendShapesWithSameNames = value; }
         }
 
         [SerializeField]

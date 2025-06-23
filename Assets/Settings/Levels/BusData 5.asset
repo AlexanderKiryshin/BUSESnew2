@@ -13,183 +13,123 @@ MonoBehaviour:
   m_Name: BusData 5
   m_EditorClassIdentifier: 
   buses:
-  - position: {x: -2.5, y: 0, z: -2.5}
-    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
-    busType: 0
-  - position: {x: -2.5, y: 0, z: -0.8999997}
-    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
-    busType: 1
-  - position: {x: -2.5, y: 0, z: 0.7000003}
-    rotation: {x: 0, y: 0.38268346, z: 0, w: 0.9238795}
-    busType: 2
-  - position: {x: -2.5, y: 0, z: 2.3000004}
-    rotation: {x: 0, y: 0.38268346, z: 0, w: 0.9238795}
-    busType: 0
-  - position: {x: -0.8999997, y: 0, z: -2.5}
-    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
-    busType: 1
-  - position: {x: -0.2999997, y: 0, z: -0.2999997}
-    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
-    busType: 2
-  - position: {x: -0.6999997, y: 0, z: 0.9000003}
-    rotation: {x: 0, y: 0.38268346, z: 0, w: 0.9238795}
-    busType: 0
-  - position: {x: 0.7000003, y: 0, z: -2.5}
-    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
-    busType: 1
-  - position: {x: 0.7000003, y: 0, z: 2.3000004}
-    rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
-    busType: 2
-  - position: {x: 0.9000003, y: 0, z: -0.6999997}
-    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
-    busType: 0
-  - position: {x: 2.3000004, y: 0, z: -2.5}
-    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
-    busType: 1
-  - position: {x: 2.3000004, y: 0, z: 2.3000004}
-    rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
-    busType: 2
-  - position: {x: -5, y: 0, z: -5}
+  - position: {x: -2.5, y: 0, z: -8}
     rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
     busType: 0
-  - position: {x: -5, y: 0, z: -3.4000008}
+  - position: {x: -2.5, y: 0, z: -5.000003}
     rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
     busType: 1
-  - position: {x: -5, y: 0, z: -1.4000003}
+  - position: {x: -2.5, y: 0, z: -2.0000033}
     rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
     busType: 2
-  - position: {x: -5, y: 0, z: 0.39999974}
-    rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
-    busType: 0
-  - position: {x: -5, y: 0, z: 1.9999999}
-    rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
-    busType: 1
-  - position: {x: -5, y: 0, z: 3.6000001}
-    rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
-    busType: 2
-  - position: {x: -4.53, y: 0, z: 4.73}
-    rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
-    busType: 0
-  - position: {x: -3.2000008, y: 0, z: 4.999999}
-    rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
-    busType: 1
-  - position: {x: -1.8000004, y: 0, z: -5}
-    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
-    busType: 2
-  - position: {x: -3.0000007, y: 0, z: -4.6000004}
-    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
-    busType: 0
-  - position: {x: -1.6000004, y: 0, z: 4.999999}
-    rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
-    busType: 1
-  - position: {x: -0.20000027, y: 0, z: -5}
-    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
-    busType: 2
-  - position: {x: -0.0000002682209, y: 0, z: 4.999999}
-    rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
-    busType: 0
-  - position: {x: 1.3999997, y: 0, z: -5}
-    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
-    busType: 1
-  - position: {x: 1.5999998, y: 0, z: 4.999999}
-    rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
-    busType: 2
-  - position: {x: 2.6, y: 0, z: -0.60000026}
-    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
-    busType: 0
-  - position: {x: 3, y: 0, z: -5}
-    rotation: {x: 0, y: -0.38268346, z: 0, w: -0.92387956}
-    busType: 1
-  - position: {x: 3.2, y: 0, z: 4.999999}
-    rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
-    busType: 2
-  - position: {x: 3.2, y: 0, z: -3.2000008}
-    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
-    busType: 0
-  - position: {x: 4, y: 0, z: 2.1999998}
-    rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
-    busType: 1
-  - position: {x: 4.5999994, y: 0, z: -5}
-    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
-    busType: 2
-  - position: {x: 4.2, y: 0, z: -1.4000003}
+  - position: {x: -0.4999997, y: 0, z: -1.0000031}
     rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
     busType: 0
-  - position: {x: 4.799999, y: 0, z: -0.40000027}
-    rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
-    busType: 1
-  - position: {x: 4.799999, y: 0, z: 4.999999}
-    rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
-    busType: 2
-  - position: {x: 4.799999, y: 0, z: -3.2000008}
-    rotation: {x: 0, y: -0.38268346, z: 0, w: -0.92387956}
-    busType: 0
-  - position: {x: -7, y: 0, z: -7}
+  - position: {x: 1.3000003, y: 0, z: -5.6000023}
     rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
     busType: 1
-  - position: {x: -7, y: 0, z: 5.1999974}
-    rotation: {x: 0, y: 0.38268346, z: 0, w: 0.9238795}
-    busType: 2
-  - position: {x: -7.62, y: 0, z: -5.05}
-    rotation: {x: -0, y: 0.9998869, z: -0, w: 0.015047297}
-    busType: 0
-  - position: {x: -7, y: 0, z: -3.2000027}
-    rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
-    busType: 1
-  - position: {x: -7, y: 0, z: 6.799996}
-    rotation: {x: 0, y: 0.38268346, z: 0, w: 0.9238795}
-    busType: 2
-  - position: {x: -7, y: 0, z: -1.6000023}
-    rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
-    busType: 0
-  - position: {x: -7, y: 0, z: 0.5999978}
-    rotation: {x: 0, y: 0.38268346, z: 0, w: 0.9238795}
-    busType: 1
-  - position: {x: 4.1999984, y: 0, z: -7}
+  - position: {x: 2.1000004, y: 0, z: -8}
     rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
     busType: 2
-  - position: {x: -7, y: 0, z: 2.999998}
+  - position: {x: 2.5000005, y: 0, z: -1.0000031}
+    rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
+    busType: 0
+  - position: {x: -5, y: 0, z: -11.5}
+    rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
+    busType: 1
+  - position: {x: -5, y: 0, z: -8.500003}
+    rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
+    busType: 2
+  - position: {x: -5, y: 0, z: 1.4999937}
     rotation: {x: 0, y: 0.38268346, z: 0, w: 0.9238795}
     busType: 0
-  - position: {x: -4.800002, y: 0, z: -7}
+  - position: {x: 1.5999998, y: 0, z: -11.5}
     rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
     busType: 1
-  - position: {x: 4.399998, y: 0, z: 6.9999957}
+  - position: {x: 1.9999999, y: 0, z: 2.4999938}
     rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
     busType: 2
-  - position: {x: -4.4000025, y: 0, z: 6.9999957}
+  - position: {x: -1.0000002, y: 0, z: 2.4999938}
+    rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
+    busType: 0
+  - position: {x: 4.5999994, y: 0, z: -11.5}
+    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
+    busType: 1
+  - position: {x: 4.999999, y: 0, z: 2.4999938}
+    rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
+    busType: 2
+  - position: {x: 4.5999994, y: 0, z: -8.500003}
+    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
+    busType: 0
+  - position: {x: 5.7999983, y: 0, z: -5.7000055}
+    rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
+    busType: 1
+  - position: {x: -8, y: 0, z: -15.5}
+    rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
+    busType: 2
+  - position: {x: 5.999998, y: 0, z: -1.5000064}
+    rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
+    busType: 0
+  - position: {x: -8, y: 0, z: -12.500003}
+    rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
+    busType: 1
+  - position: {x: -8, y: 0, z: 1.4999899}
     rotation: {x: 0, y: 0.38268346, z: 0, w: 0.9238795}
-    busType: 0
-  - position: {x: -0.92, y: 0, z: 7.11}
-    rotation: {x: -0, y: 0.6449118, z: -0, w: 0.764257}
-    busType: 1
-  - position: {x: 6.2, y: 0, z: -6.6}
-    rotation: {x: 0, y: -0.38268346, z: 0, w: -0.92387956}
     busType: 2
-  - position: {x: -0.60000217, y: 0, z: -7}
-    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
-    busType: 0
-  - position: {x: 5.599997, y: 0, z: 2.199998}
+  - position: {x: -8, y: 0, z: -8.500007}
     rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
+    busType: 0
+  - position: {x: -8, y: 0, z: -4.5000105}
+    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
     busType: 1
-  - position: {x: 5.9999967, y: 0, z: 6.9999957}
+  - position: {x: -8, y: 0, z: 4.49999}
+    rotation: {x: 0, y: 0.38268346, z: 0, w: 0.9238795}
+    busType: 2
+  - position: {x: -6.6000013, y: 0, z: -1.7000103}
+    rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
+    busType: 0
+  - position: {x: -3.4000037, y: 0, z: 6.0999885}
+    rotation: {x: 0, y: 0.38268346, z: 0, w: 0.9238795}
+    busType: 1
+  - position: {x: 3.5999973, y: 0, z: -15.5}
+    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
+    busType: 2
+  - position: {x: -4.800003, y: 0, z: -15.5}
+    rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
+    busType: 0
+  - position: {x: 0.59999686, y: 0, z: -15.5}
+    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
+    busType: 1
+  - position: {x: 3.9999974, y: 0, z: 6.499988}
     rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
     busType: 2
-  - position: {x: 0.9999978, y: 0, z: -7}
-    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
-    busType: 0
-  - position: {x: 6.1999965, y: 0, z: -0.20000218}
-    rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
-    busType: 1
-  - position: {x: 6.9999957, y: 0, z: -3.2000027}
-    rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
-    busType: 2
-  - position: {x: 6.3999963, y: 0, z: -4.800002}
-    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
-    busType: 0
-  - position: {x: 6.9999957, y: 0, z: 4.399998}
+  - position: {x: 0.99999684, y: 0, z: 6.499988}
     rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
-    busType: 1
-  - position: {x: 7.15, y: 0, z: 2.44}
+    busType: 0
+  - position: {x: 6.599995, y: 0, z: -15.5}
+    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
+    busType: 0
+  - position: {x: 6.9999948, y: 0, z: 6.499988}
+    rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
+    busType: 0
+  - position: {x: 7.3999944, y: 0, z: -11.700004}
+    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
+    busType: 0
+  - position: {x: 7.599994, y: 0, z: -8.500007}
+    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
+    busType: 0
+  - position: {x: 7.999994, y: 0, z: 2.49999}
+    rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
+    busType: 0
+  - position: {x: 8.399994, y: 0, z: -3.7000108}
+    rotation: {x: 0, y: 0.92387956, z: 0, w: -0.3826834}
+    busType: 0
+  - position: {x: 9.399993, y: 0, z: -14.300001}
+    rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
+    busType: 0
+  - position: {x: 9.999992, y: 0, z: -6.900008}
+    rotation: {x: 0, y: -0.9238795, z: 0, w: -0.38268358}
+    busType: 0
+  - position: {x: 9.999992, y: 0, z: 6.499988}
     rotation: {x: 0, y: -0.38268346, z: 0, w: 0.9238795}
     busType: 0

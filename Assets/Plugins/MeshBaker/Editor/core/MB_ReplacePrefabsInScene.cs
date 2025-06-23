@@ -65,13 +65,13 @@ namespace DigitalOpus.MB.MBEditor
                 return 0;
             }
 
-            if (IsSceneInstance(mySrcPrefab))
+            if (MB_Utility.IsSceneInstance(mySrcPrefab))
             {
                 AddError(mySrcPrefab, "The source prefab was a scene instance. It must be a project asset.");
                 return 0;
             }
 
-            if (IsSceneInstance(myTargPrefab))
+            if (MB_Utility.IsSceneInstance(myTargPrefab))
             {
                 AddError(mySrcPrefab, "The target prefab was a scene instance. It must be a project asset.");
                 return 0;
@@ -152,8 +152,8 @@ namespace DigitalOpus.MB.MBEditor
 
         private bool ReplaceSinglePrefabInstance(GameObject src, GameObject targ)
         {
-            Debug.Assert(IsSceneInstance(src));
-            Debug.Assert(IsSceneInstance(targ));
+            Debug.Assert(MB_Utility.IsSceneInstance(src));
+            Debug.Assert(MB_Utility.IsSceneInstance(targ));
 
             // Build a source 2 target map of all internal references
             if (replaceEnforceStructure)
@@ -230,7 +230,7 @@ namespace DigitalOpus.MB.MBEditor
         {
             SerializedObject srcSO = new SerializedObject(comp);
             SerializedProperty prop = srcSO.GetIterator();
-            List<Prop2Reference> proData = new List<Prop2Reference>();
+            List<Prop2Reference> propRefs = new List<Prop2Reference>();
             SerializedProperty arrayPropParent = null;
             if (prop.NextVisible(true))
             {
@@ -273,7 +273,7 @@ namespace DigitalOpus.MB.MBEditor
                                 parentArraySize = parentArraySize,
                             };
 
-                            proData.Add(srcComp2Mats);
+                            propRefs.Add(srcComp2Mats);
                         }
                     }
                 }
@@ -281,12 +281,12 @@ namespace DigitalOpus.MB.MBEditor
                 while (prop.NextVisible(true));
             }
 
-            if (proData.Count > 0)
+            if (propRefs.Count > 0)
             {
                 Component2MeshAndMaterials srcComp2Mats = new Component2MeshAndMaterials()
                 {
                     component = comp,
-                    props = proData,
+                    props = propRefs,
                 };
 
                 propRefereces.Add(srcComp2Mats.component, srcComp2Mats);
@@ -299,11 +299,6 @@ namespace DigitalOpus.MB.MBEditor
             string pth = AssetDatabase.GetAssetPath(obj);
             if (pth == null || pth.Equals("")) return true;
             return false;
-        }
-
-        public static bool IsSceneInstance(GameObject go)
-        {
-            return go.scene.name != null;
         }
 
         private bool CopyGameObjectDifferences(GameObject srcGO, GameObject targGO,

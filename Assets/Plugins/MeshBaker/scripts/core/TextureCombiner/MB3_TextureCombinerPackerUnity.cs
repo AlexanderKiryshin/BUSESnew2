@@ -7,6 +7,11 @@ namespace DigitalOpus.MB.Core
 {
     internal class MB3_TextureCombinerPackerUnity : MB3_TextureCombinerPackerRoot
     {
+        public override bool Validate(MB3_TextureCombinerPipeline.TexturePipelineData data)
+        {
+            return true;
+        }
+
         public override AtlasPackingResult[] CalculateAtlasRectangles(MB3_TextureCombinerPipeline.TexturePipelineData data, bool doMultiAtlas, MB2_LogLevel LOG_LEVEL)
         {
             Debug.Assert(!data.OnlyOneTextureInAtlasReuseTextures());
@@ -55,7 +60,7 @@ namespace DigitalOpus.MB.Core
                             textureEditorMethods.SetReadWriteFlag(tx, true, true);
                         }
 
-                        tx = GetAdjustedForScaleAndOffset2(prop.name, txs.ts[propIdx], txs.obUVoffset, txs.obUVscale, data, combiner, LOG_LEVEL);
+                        tx = GetAdjustedForScaleAndOffset2(prop, txs.ts[propIdx], txs.obUVoffset, txs.obUVscale, data, combiner, LOG_LEVEL);
                         //create a resized copy if necessary
                         if (tx.width != tWidth || tx.height != tHeight)
                         {
@@ -107,8 +112,9 @@ namespace DigitalOpus.MB.Core
 
                 if (data._saveAtlasesAsAssets && textureEditorMethods != null)
                 {
-                    textureEditorMethods.SaveAtlasToAssetDatabase(atlases[propIdx], prop, propIdx, data.resultMaterial);
+                    SaveAtlasAndConfigureResultMaterial(data, textureEditorMethods, atlases[propIdx], data.texPropertyNames[propIdx], propIdx);
                 }
+
                 data.resultMaterial.SetTextureOffset(prop.name, Vector2.zero);
                 data.resultMaterial.SetTextureScale(prop.name, Vector2.one);
                 combiner._destroyTemporaryTextures(prop.name);
@@ -144,7 +150,7 @@ namespace DigitalOpus.MB.Core
 
         // used by Unity texture packer to handle tiled textures.
         // may create a new texture that has the correct tiling to handle fix out of bounds UVs
-        internal static Texture2D GetAdjustedForScaleAndOffset2(string propertyName, MeshBakerMaterialTexture source, Vector2 obUVoffset, Vector2 obUVscale, MB3_TextureCombinerPipeline.TexturePipelineData data, MB3_TextureCombiner combiner, MB2_LogLevel LOG_LEVEL)
+        internal static Texture2D GetAdjustedForScaleAndOffset2(ShaderTextureProperty propertyName, MeshBakerMaterialTexture source, Vector2 obUVoffset, Vector2 obUVscale, MB3_TextureCombinerPipeline.TexturePipelineData data, MB3_TextureCombiner combiner, MB2_LogLevel LOG_LEVEL)
         {
             Texture2D sourceTex = source.GetTexture2D();
             if (source.matTilingRect.x == 0f && source.matTilingRect.y == 0f && source.matTilingRect.width == 1f && source.matTilingRect.height == 1f)
@@ -177,7 +183,7 @@ namespace DigitalOpus.MB.Core
                 ox = (float)(source.matTilingRect.x * obUVscale.x + obUVoffset.x);
                 oy = (float)(source.matTilingRect.y * obUVscale.y + obUVoffset.y);
             }
-            Texture2D newTex = combiner._createTemporaryTexture(propertyName, (int)newWidth, (int)newHeight, TextureFormat.ARGB32, true);
+            Texture2D newTex = combiner._createTemporaryTexture(propertyName.name, (int)newWidth, (int)newHeight, TextureFormat.ARGB32, true, MB3_TextureCombiner.ShouldTextureBeLinear(propertyName));
             for (int i = 0; i < newTex.width; i++)
             {
                 for (int j = 0; j < newTex.height; j++)

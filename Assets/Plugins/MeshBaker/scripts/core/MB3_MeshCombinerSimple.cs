@@ -41,7 +41,7 @@ namespace DigitalOpus.MB.Core
         {
             set
             {
-                if (_resultSceneObject != value)
+                if (_resultSceneObject != value && _resultSceneObject != null)
                 {
                     _targetRenderer = null;
                     if (_mesh != null && LOG_LEVEL >= MB2_LogLevel.warn)
@@ -235,34 +235,6 @@ namespace DigitalOpus.MB.Core
             else {
                 return -1;
             }
-        }
-
-
-        [System.Obsolete("BuildSourceBlendShapeToCombinedIndexMap is deprecated. The map will be now be attached to the combined SkinnedMeshRenderer object as the MB_BlendShape2CombinedMap Component.")]
-        public override Dictionary<MBBlendShapeKey, MBBlendShapeValue> BuildSourceBlendShapeToCombinedIndexMap()
-        {
-            if (_targetRenderer == null) return new Dictionary<MBBlendShapeKey, MBBlendShapeValue>();
-            MB_BlendShape2CombinedMap mapComponent = _targetRenderer.GetComponent<MB_BlendShape2CombinedMap>();
-            if (mapComponent == null) return new Dictionary<MBBlendShapeKey, MBBlendShapeValue>();
-            return mapComponent.srcToCombinedMap.GenerateMapFromSerializedData();
-        }
-
-        internal void BuildSourceBlendShapeToCombinedSerializableIndexMap(SerializableSourceBlendShape2Combined outMap)
-        {
-            Debug.Assert(_targetRenderer.gameObject != null, "Target Renderer was null.");
-            GameObject[] srcGameObjects = new GameObject[blendShapes.Length];
-            int[] srcBlendShapeIdxs = new int[blendShapes.Length];
-            GameObject[] targGameObjects = new GameObject[blendShapes.Length];
-            int[] targBlendShapeIdxs = new int[blendShapes.Length];
-            for (int i = 0; i < blendShapesInCombined.Length; i++)
-            {
-                srcGameObjects[i] = blendShapesInCombined[i].gameObject;
-                srcBlendShapeIdxs[i] = blendShapesInCombined[i].indexInSource;
-                targGameObjects[i] = _targetRenderer.gameObject;
-                targBlendShapeIdxs[i] = i;
-            }
-
-            outMap.SetBuffers(srcGameObjects, srcBlendShapeIdxs, targGameObjects, targBlendShapeIdxs);
         }
 
         bool _Initialize(int numResultMats)
@@ -608,7 +580,7 @@ namespace DigitalOpus.MB.Core
             Dictionary<int, MB_Utility.MeshAnalysisResult[]> meshAnalysisResultsCache = new Dictionary<int, MB_Utility.MeshAnalysisResult[]>(); //cache results
 
             //we are often adding the same sharedMesh many times. Only want to grab the results once and cache them
-            MeshChannelsCache meshChannelCache = new MeshChannelsCache(LOG_LEVEL, lightmapOption);
+            MeshChannelsCache meshChannelCache = new MeshChannelsCache(LOG_LEVEL, settings.lightmapOption);
 
             int totalAddVerts = 0;
             int[] totalAddSubmeshTris = new int[numResultMats];
@@ -673,7 +645,12 @@ namespace DigitalOpus.MB.Core
                         Renderer r = MB_Utility.GetRenderer(go);
                         if (settings.renderType == MB_RenderType.skinnedMeshRenderer)
                         {
-                            boneProcessor.CollectBonesToAddForDGO(dgo, r, meshChannelCache);
+                            if (!boneProcessor.CollectBonesToAddForDGO(dgo, r, settings.smrNoExtraBonesWhenCombiningMeshRenderers, meshChannelCache))
+                            {
+                                Debug.LogError("Object " + go.name + " could not collect bones.");
+                                _goToAdd[i] = null;
+                                return false;
+                            }
                         }
                         if (lightmapIndex == -1)
                         {
@@ -749,7 +726,8 @@ namespace DigitalOpus.MB.Core
             int newVertSize = verts.Length + totalAddVerts - totalDeleteVerts;
             int newBonesSize = boneProcessor.GetNewBonesLength();
             int[] newSubmeshTrisSize = new int[numResultMats];
-            int newBlendShapeSize = blendShapes.Length + totalAddBlendShapes - totalDeleteBlendShapes;
+            int newBlendShapeSize = 0;
+            if (settings.doBlendShapes) newBlendShapeSize = blendShapes.Length + totalAddBlendShapes - totalDeleteBlendShapes;
             if (LOG_LEVEL >= MB2_LogLevel.debug) Debug.Log("Verts adding:" + totalAddVerts + " deleting:" + totalDeleteVerts + " submeshes:" + newSubmeshTrisSize.Length + " bones:" + newBonesSize + " blendShapes:" + newBlendShapeSize);
 
             for (int i = 0; i < newSubmeshTrisSize.Length; i++)
@@ -940,14 +918,14 @@ namespace DigitalOpus.MB.Core
                 l2wRotScale[0, 3] = l2wRotScale[1, 3] = l2wRotScale[2, 3] = 0f;
                 l2wRotScale = l2wRotScale.inverse.transpose;
 
-                //can't modify the arrays we get from the cache because they will be modified again
+                //can't modify the arrays we get from the cache because they will be modified multiple times if the same mesh is being added multiple times.
                 nverts = meshChannelCache.GetVertices(mesh);
                 Vector3[] nnorms = null;
                 Vector4[] ntangs = null;
                 if (settings.doNorm) nnorms = meshChannelCache.GetNormals(mesh);
                 if (settings.doTan) ntangs = meshChannelCache.GetTangents(mesh);
                 if (settings.renderType != MB_RenderType.skinnedMeshRenderer)
-                { //for skinned meshes leave in bind pose
+                {
                     for (int j = 0; j < nverts.Length; j++)
                     {
                         int vIdx = vertsIdx + j;
@@ -959,17 +937,15 @@ namespace DigitalOpus.MB.Core
                         if (settings.doTan)
                         {
                             float w = ntangs[j].w; //need to preserve the w value
-                            tangents[vIdx] = l2wRotScale.MultiplyPoint3x4(((Vector3) ntangs[j])).normalized;
+                            tangents[vIdx] = l2wRotScale.MultiplyPoint3x4(((Vector3)ntangs[j])).normalized;
                             tangents[vIdx].w = w;
                         }
                     }
                 }
                 else {
-                    if (settings.doNorm) nnorms.CopyTo(normals, vertsIdx);
-                    if (settings.doTan) ntangs.CopyTo(tangents, vertsIdx);
-                    nverts.CopyTo(verts, vertsIdx);
+                    //for skinned meshes leave in bind pose
+                    boneProcessor.CopyVertsNormsTansToBuffers(dgo, settings, vertsIdx, nnorms, ntangs, nverts, normals, tangents, verts);
                 }
-                //				Profile.EndProfile("TestNewNorm");
 
                 int numTriSets = mesh.subMeshCount;
                 if (dgo.uvRects.Length < numTriSets)
@@ -1127,65 +1103,9 @@ namespace DigitalOpus.MB.Core
             }
         }
 
-        public override void UpdateSkinnedMeshApproximateBounds()
+        Transform[] _getBones(Renderer r, bool isSkinnedMeshWithBones)
         {
-            UpdateSkinnedMeshApproximateBoundsFromBounds();
-        }
-
-        public override void UpdateSkinnedMeshApproximateBoundsFromBones()
-        {
-            if (outputOption == MB2_OutputOptions.bakeMeshAssetsInPlace)
-            {
-                if (LOG_LEVEL >= MB2_LogLevel.warn) Debug.LogWarning("Can't UpdateSkinnedMeshApproximateBounds when output type is bakeMeshAssetsInPlace");
-                return;
-            }
-            if (bones.Length == 0)
-            {
-                if (verts.Length > 0) if (LOG_LEVEL >= MB2_LogLevel.warn) Debug.LogWarning("No bones in SkinnedMeshRenderer. Could not UpdateSkinnedMeshApproximateBounds.");
-                return;
-            }
-            if (_targetRenderer == null)
-            {
-                if (LOG_LEVEL >= MB2_LogLevel.warn) Debug.LogWarning("Target Renderer is not set. No point in calling UpdateSkinnedMeshApproximateBounds.");
-                return;
-            }
-            if (!_targetRenderer.GetType().Equals(typeof(SkinnedMeshRenderer)))
-            {
-                if (LOG_LEVEL >= MB2_LogLevel.warn) Debug.LogWarning("Target Renderer is not a SkinnedMeshRenderer. No point in calling UpdateSkinnedMeshApproximateBounds.");
-                return;
-            }
-            UpdateSkinnedMeshApproximateBoundsFromBonesStatic(bones, (SkinnedMeshRenderer)targetRenderer);
-        }
-
-        public override void UpdateSkinnedMeshApproximateBoundsFromBounds()
-        {
-            if (outputOption == MB2_OutputOptions.bakeMeshAssetsInPlace)
-            {
-                if (LOG_LEVEL >= MB2_LogLevel.warn) Debug.LogWarning("Can't UpdateSkinnedMeshApproximateBoundsFromBounds when output type is bakeMeshAssetsInPlace");
-                return;
-            }
-            if (verts.Length == 0 || mbDynamicObjectsInCombinedMesh.Count == 0)
-            {
-                if (verts.Length > 0) if (LOG_LEVEL >= MB2_LogLevel.warn) Debug.LogWarning("Nothing in SkinnedMeshRenderer. Could not UpdateSkinnedMeshApproximateBoundsFromBounds.");
-                return;
-            }
-            if (_targetRenderer == null)
-            {
-                if (LOG_LEVEL >= MB2_LogLevel.warn) Debug.LogWarning("Target Renderer is not set. No point in calling UpdateSkinnedMeshApproximateBoundsFromBounds.");
-                return;
-            }
-            if (!_targetRenderer.GetType().Equals(typeof(SkinnedMeshRenderer)))
-            {
-                if (LOG_LEVEL >= MB2_LogLevel.warn) Debug.LogWarning("Target Renderer is not a SkinnedMeshRenderer. No point in calling UpdateSkinnedMeshApproximateBoundsFromBounds.");
-                return;
-            }
-
-            UpdateSkinnedMeshApproximateBoundsFromBoundsStatic(objectsInCombinedMesh, (SkinnedMeshRenderer)targetRenderer);
-        }
-
-        Transform[] _getBones(Renderer r)
-        {
-            return MBVersion.GetBones(r);
+            return MBVersion.GetBones(r, isSkinnedMeshWithBones);
         }
 
         public override void Apply(GenerateUV2Delegate uv2GenerationMethod)
@@ -1299,7 +1219,7 @@ namespace DigitalOpus.MB.Core
                 if (LOG_LEVEL >= MB2_LogLevel.trace)
                 {
                     Debug.Log(String.Format("Apply called tri={0} vert={1} norm={2} tan={3} uv={4} col={5} uv3={6} uv4={7} uv2={8} bone={9} blendShape{10} meshID={11}",
-                        triangles, vertices, normals, tangents, uvs, colors, uv3, uv4, uv2, bones, blendShapes, _mesh.GetInstanceID()));
+                        triangles, vertices, normals, tangents, uvs, colors, uv3, uv4, uv2, bones, blendShapesFlag, _mesh.GetInstanceID()));
                 }
                 if (triangles || _mesh.vertexCount != verts.Length)
                 {
@@ -1578,51 +1498,13 @@ namespace DigitalOpus.MB.Core
                 }
                 if (blendShapesFlag)
                 {
-                    if (MBVersion.GetMajorVersion() > 5 ||
-                    (MBVersion.GetMajorVersion() == 5 && MBVersion.GetMinorVersion() >= 3))
+                    if (settings.smrMergeBlendShapesWithSameNames)
                     {
-                        if (blendShapesInCombined.Length != blendShapes.Length) blendShapesInCombined = new MBBlendShape[blendShapes.Length];
-                        Vector3[] vs = new UnityEngine.Vector3[verts.Length];
-                        Vector3[] ns = new UnityEngine.Vector3[verts.Length];
-                        Vector3[] ts = new UnityEngine.Vector3[verts.Length];
-             
-                        MBVersion.ClearBlendShapes(_mesh);
-                        for (int i = 0; i < blendShapes.Length; i++)
-                        {
-                            MB_DynamicGameObject dgo = instance2Combined_MapGet(blendShapes[i].gameObject);
-                            if (dgo != null)
-                            {
-                                for (int j = 0; j < blendShapes[i].frames.Length; j++)
-                                {
-                                    MBBlendShapeFrame frame = blendShapes[i].frames[j];
-                                    int destIdx = dgo.vertIdx;
-                                    Array.Copy(frame.vertices, 0, vs, destIdx, blendShapes[i].frames[j].vertices.Length);
-                                    Array.Copy(frame.normals, 0, ns, destIdx, blendShapes[i].frames[j].normals.Length);
-                                    Array.Copy(frame.tangents, 0, ts, destIdx, blendShapes[i].frames[j].tangents.Length);
-                                    MBVersion.AddBlendShapeFrame(_mesh,blendShapes[i].name + blendShapes[i].gameObjectID, frame.frameWeight, vs, ns, ts);
-                                    _ZeroArray(vs, destIdx, blendShapes[i].frames[j].vertices.Length);
-                                    _ZeroArray(ns, destIdx, blendShapes[i].frames[j].normals.Length);
-                                    _ZeroArray(ts, destIdx, blendShapes[i].frames[j].tangents.Length);
-                                }
-                            }
-                            else
-                            {
-                                Debug.LogError("InstanceID in blend shape that was not in instance2combinedMap");
-                            }
-                            blendShapesInCombined[i] = blendShapes[i];
-                        }
-                        //this is necessary to get the renderer to refresh its data about the blendshapes.
-                        ((SkinnedMeshRenderer)_targetRenderer).sharedMesh = null;
-                        ((SkinnedMeshRenderer)_targetRenderer).sharedMesh = _mesh;
-
-                        // Add the map to the target renderer.
-                        if (settings.doBlendShapes)
-                        {
-                            MB_BlendShape2CombinedMap mapComponent = _targetRenderer.GetComponent<MB_BlendShape2CombinedMap>();
-                            if (mapComponent == null) mapComponent = _targetRenderer.gameObject.AddComponent<MB_BlendShape2CombinedMap>();
-                            SerializableSourceBlendShape2Combined map = mapComponent.GetMap();
-                            BuildSourceBlendShapeToCombinedSerializableIndexMap(map);
-                        }
+                        ApplyBlendShapeFramesToMeshAndBuildMap_MergeBlendShapesWithTheSameName();
+                    }
+                    else
+                    {
+                        ApplyBlendShapeFramesToMeshAndBuildMap();
                     }
                 }
                 if (triangles || vertices)
@@ -1760,7 +1642,7 @@ namespace DigitalOpus.MB.Core
                 Debug.LogWarning("There were vertices in the combined mesh but nothing in the MeshBaker buffers. If you are trying to bake in the editor and modify at runtime, make sure 'Clear Buffers After Bake' is unchecked.");
             }
             bool success = true;
-            MeshChannelsCache meshChannelCache = new MeshChannelsCache(LOG_LEVEL, lightmapOption);
+            MeshChannelsCache meshChannelCache = new MeshChannelsCache(LOG_LEVEL, settings.lightmapOption);
             UVAdjuster_Atlas uvAdjuster = null;
             OrderedDictionary sourceMats2submeshIdx_map = null;
             Dictionary<int, MB_Utility.MeshAnalysisResult[]> meshAnalysisResultsCache = null;
@@ -1824,8 +1706,8 @@ namespace DigitalOpus.MB.Core
                 //only does BoneWeights. Used to do Bones and BindPoses but it doesn't make sence.
                 //if updating Bones and Bindposes should remove and re-add
                 Renderer r = MB_Utility.GetRenderer(go);
-                BoneWeight[] bws = meshChannelCache.GetBoneWeights(r, dgo.numVerts);
-                Transform[] bs = _getBones(r);
+                BoneWeight[] bws = meshChannelCache.GetBoneWeights(r, dgo.numVerts, dgo.isSkinnedMeshWithBones);
+                Transform[] bs = _getBones(r, dgo.isSkinnedMeshWithBones);
                 //assumes that the bones and boneweights have not been reeordered
                 int bwIdx = dgo.vertIdx; //the index in the verts array
                 bool switchedBonesDetected = false;
@@ -2111,6 +1993,11 @@ namespace DigitalOpus.MB.Core
             ClearBuffers();
         }
 
+        public override void ClearMesh(MB2_EditorMethodsInterface editorMethods)
+        {
+            ClearMesh();
+        }
+
         public override void DisposeRuntimeCreated()
         {
             if (Application.isPlaying)
@@ -2128,9 +2015,9 @@ namespace DigitalOpus.MB.Core
             }
         }
 
-        /*
-		 * Empties all channels, destroys the mesh and replaces it with a new mesh
-		 */
+        /// <summary>
+        /// Empties all channels, destroys the mesh and replaces it with a new mesh
+        /// </summary>
         public override void DestroyMesh()
         {
             if (_mesh != null)
@@ -2526,16 +2413,6 @@ namespace DigitalOpus.MB.Core
                 {
                     Debug.LogError("Blend shapes can only be used with skinned meshes.");
                 }
-            }
-        }
-
-
-        void _ZeroArray(Vector3[] arr, int idx, int length)
-        {
-            int bound = idx + length;
-            for (int i = idx; i < bound; i++)
-            {
-                arr[i] = Vector3.zero;
             }
         }
 

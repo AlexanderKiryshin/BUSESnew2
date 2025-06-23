@@ -20,7 +20,9 @@ namespace DigitalOpus.MB.Core
         private saveTextureFormat SAVE_FORMAT = saveTextureFormat.png;
 
         private List<Texture2D> _texturesWithReadWriteFlagSet = new List<Texture2D>();
-        private Dictionary<Texture2D, TextureFormatInfo> _textureFormatMap = new Dictionary<Texture2D, TextureFormatInfo>();
+        
+        private Dictionary<Texture2D, TextureFormatInfo_AbstractDefaultPlatform> _textureFormatMap_DefaultAbstract = new Dictionary<Texture2D, TextureFormatInfo_AbstractDefaultPlatform>();
+        private Dictionary<Texture2D, TextureFormatInfo_PlatformOverride> _textureFormatMap_PlatformOverride = new Dictionary<Texture2D, TextureFormatInfo_PlatformOverride>();
 
         public MobileTextureSubtarget AndroidBuildTexCompressionSubtarget;
 #if UNITY_TIZEN
@@ -29,7 +31,8 @@ namespace DigitalOpus.MB.Core
         public void Clear()
         {
             _texturesWithReadWriteFlagSet.Clear();
-            _textureFormatMap.Clear();
+            _textureFormatMap_DefaultAbstract.Clear();
+            _textureFormatMap_PlatformOverride.Clear();
         }
 
         public void OnPreTextureBake()
@@ -71,27 +74,54 @@ namespace DigitalOpus.MB.Core
         }
 
 #if UNITY_5_5_OR_NEWER
-        class TextureFormatInfo
+        class TextureFormatInfo_AbstractDefaultPlatform
         {
-            public TextureImporterCompression textureCompression;
-            public bool doCrunchCompression;
-            public TextureImporterFormat platformFormat;
+            public TextureImporterCompression abstractDefaultTextureCompression;
+            public bool abstractDefaultDoCrunchCompression;
+            public TextureImporterFormat abstractDefaultPlatformFormat;
             public int platformCompressionQuality;
             public String platform;
             public bool isNormalMap;
-            public bool platformOverride;
+            public bool doPlatformOverride;
 
-            public TextureFormatInfo(TextureImporterCompression textureCompression, bool doCrunch, string platformString, TextureImporterFormat platformFormat, int platformCompressionQuality, bool isNormMap, bool overridden)
+            public TextureFormatInfo_AbstractDefaultPlatform(TextureImporterCompression textureCompression, bool doCrunch, string platformString, TextureImporterFormat abstractDefaultPlatformFormat, int platformCompressionQuality, bool isNormMap, bool overridden)
             {
-                this.textureCompression = textureCompression;
-                doCrunchCompression = doCrunch;
+                this.abstractDefaultTextureCompression = textureCompression;
+                abstractDefaultDoCrunchCompression = doCrunch;
                 platform = platformString;
-                this.platformFormat = platformFormat;
+                this.abstractDefaultPlatformFormat = abstractDefaultPlatformFormat;
                 this.platformCompressionQuality = platformCompressionQuality;
                 this.isNormalMap = isNormMap;
-                platformOverride = overridden;
+                doPlatformOverride = overridden;
+#if UNITY_2018_3_OR_NEWER
+                Debug.Assert(abstractDefaultPlatformFormat == TextureImporterFormat.Automatic ||
+                             abstractDefaultPlatformFormat == TextureImporterFormat.Alpha8 ||
+                             abstractDefaultPlatformFormat == TextureImporterFormat.RGBA32 ||
+                             abstractDefaultPlatformFormat == TextureImporterFormat.RGB24 ||
+                             abstractDefaultPlatformFormat == TextureImporterFormat.RGB16 ||
+                             abstractDefaultPlatformFormat == TextureImporterFormat.R16 ||
+                             abstractDefaultPlatformFormat == TextureImporterFormat.R8, "Platform format should be an abstract format, Auto, Alpha8, RGBA32, RGB24, RGB16, R16, R8");
+#endif
             }
         }
+
+        class TextureFormatInfo_PlatformOverride
+        {
+            public TextureImporterFormat format;
+            public String platform;
+            public bool isNormalMap;
+            public bool doPlatformOverride;
+
+            public TextureFormatInfo_PlatformOverride(string platformString, TextureImporterFormat platformFormat, bool isNormMap, bool overridden)
+            {
+                platform = platformString;
+                format = platformFormat;
+                this.isNormalMap = isNormMap;
+                doPlatformOverride = overridden;
+            }
+        }
+
+
 
         public bool IsNormalMap(Texture2D tx)
         {
@@ -103,7 +133,7 @@ namespace DigitalOpus.MB.Core
             return false;
         }
 
-        public void AddTextureFormat(Texture2D tx, TextureFormat targetFormat, bool isNormalMap)
+        public void ConvertTextureFormat_DefaultPlatform(Texture2D tx, TextureFormat targetFormat, bool isNormalMap)
         {
             //pixel values don't copy correctly from one texture to another when isNormal is set so unset it.
             bool isFormatMapping;
@@ -113,11 +143,25 @@ namespace DigitalOpus.MB.Core
                 importerFormat = TextureImporterFormat.RGBA32;
             }
 
-            TextureFormatInfo toFormat = new TextureFormatInfo(TextureImporterCompression.Uncompressed, false, MBVersionEditor.GetPlatformString(), importerFormat, 0, isNormalMap, false);
-            _SetTextureFormat(tx, toFormat, true, false);
+            TextureFormatInfo_AbstractDefaultPlatform toFormat = new TextureFormatInfo_AbstractDefaultPlatform(TextureImporterCompression.Uncompressed, false, MBVersionEditor.GetPlatformString(), importerFormat, 0, isNormalMap, false);
+            _SetTextureFormat_DefaultPlatform(tx, toFormat, true, false);
         }
 
-        private void _SetTextureFormat(Texture2D tx, TextureFormatInfo toThisFormat, bool addToList, bool setNormalMap)
+        public void ConvertTextureFormat_PlatformOverride(Texture2D tx, TextureFormat targetFormat, bool isNormalMap)
+        {
+            //pixel values don't copy correctly from one texture to another when isNormal is set so unset it.
+            bool isFormatMapping;
+            TextureImporterFormat importerFormat = Map_TextureFormat_2_TextureImporterFormat(targetFormat, out isFormatMapping);
+            if (!isFormatMapping)
+            {
+                importerFormat = TextureImporterFormat.RGBA32;
+            }
+
+            TextureFormatInfo_PlatformOverride toFormat = new TextureFormatInfo_PlatformOverride(MBVersionEditor.GetPlatformString(), importerFormat, isNormalMap, true);
+            _SetTextureFormat_PlatformOverride(tx, toFormat, true, false);
+        }
+
+        private void _SetTextureFormat_DefaultPlatform(Texture2D tx, TextureFormatInfo_AbstractDefaultPlatform toThisFormat, bool addToList, bool setNormalMap)
         {
             AssetImporter ai = AssetImporter.GetAtPath(AssetDatabase.GetAssetOrScenePath(tx));
             if (ai != null && ai is UnityEditor.TextureImporter)
@@ -128,12 +172,23 @@ namespace DigitalOpus.MB.Core
                 bool is2017 = Application.unityVersion.StartsWith("20");
                 if (is2017)
                 {
-                    doImport = _SetTextureFormat2017(tx, toThisFormat, addToList, setNormalMap, textureImporter);
+                    doImport = _Set_DefaultPlatform_TextureFormatAndEnableDisablePlatformOverride_2017(tx, toThisFormat, addToList, setNormalMap, textureImporter);
                 }
                 else
                 {
                     doImport = _SetTextureFormatUnity5(tx, toThisFormat, addToList, setNormalMap, textureImporter);
                 }
+                if (doImport) AssetDatabase.ImportAsset(AssetDatabase.GetAssetOrScenePath(tx), ImportAssetOptions.ForceUpdate);
+            }
+        }
+
+        private void _SetTextureFormat_PlatformOverride(Texture2D tx, TextureFormatInfo_PlatformOverride toThisFormat, bool addToList, bool setNormalMap)
+        {
+            AssetImporter ai = AssetImporter.GetAtPath(AssetDatabase.GetAssetOrScenePath(tx));
+            if (ai != null && ai is UnityEditor.TextureImporter)
+            {
+                TextureImporter textureImporter = (TextureImporter)ai;
+                bool doImport = _Set_PlatformOverride_2017(tx, toThisFormat, addToList, setNormalMap, textureImporter);
                 if (doImport) AssetDatabase.ImportAsset(AssetDatabase.GetAssetOrScenePath(tx), ImportAssetOptions.ForceUpdate);
             }
         }
@@ -155,7 +210,105 @@ namespace DigitalOpus.MB.Core
             return doImport;
         }
 
-        private bool _SetTextureFormat2017(Texture2D tx, TextureFormatInfo toThisFormat, bool addToList, bool setNormalMap, TextureImporter textureImporter)
+        private void RememberTextureFormatChange(Texture2D tx, TextureFormatInfo_AbstractDefaultPlatform tfi)
+        {
+            Debug.Assert(!_textureFormatMap_DefaultAbstract.ContainsKey(tx),"We have already converted the format for this texture " + tx + " we should only do this once.");
+            Debug.Assert(!_textureFormatMap_PlatformOverride.ContainsKey(tx), "We have added a TextureImporter platform override for this texture " + tx + " we should not also be changing the default format.");
+            _textureFormatMap_DefaultAbstract.Add(tx, tfi);
+        }
+
+        private void RememberTextureFormatChange(Texture2D tx, TextureFormatInfo_PlatformOverride tfi)
+        {
+            Debug.Assert(!_textureFormatMap_PlatformOverride.ContainsKey(tx), "We have already added a platform override for texture " + tx + " we should only do this once.");
+            Debug.Assert(!_textureFormatMap_DefaultAbstract.ContainsKey(tx), "We have added a converted the format for default platform for texture " + tx + " we should not also be changing the platform override.");
+            _textureFormatMap_PlatformOverride.Add(tx, tfi);
+        }
+
+
+        private bool _Set_PlatformOverride_2017(Texture2D tx, TextureFormatInfo_PlatformOverride toThisFormat, bool rememberRestoreSettings, bool setNormalMap, TextureImporter textureImporter)
+        {
+            bool is2017 = Application.unityVersion.StartsWith("20");
+            if (!is2017)
+            {
+                Debug.LogError("Wrong texture format converter. 2017 Should not be called for Unity Version " + Application.unityVersion);
+                return false;
+            }
+
+            // Reimport takes a long time so we only want to reimport if necessary.
+            bool doImport = false;
+
+            // Record the old format so we can restore after changing format.
+            string restoreBuildPlatform = GetPlatformString();
+
+            // Get the restore settings
+            // First check if there is an override for this platform.
+            TextureImporterPlatformSettings platformOverriddenTips = textureImporter.GetPlatformTextureSettings(restoreBuildPlatform);
+            TextureFormatInfo_PlatformOverride restoreTfi;
+            {
+                restoreTfi = new TextureFormatInfo_PlatformOverride(restoreBuildPlatform, platformOverriddenTips.format, textureImporter.textureType == TextureImporterType.NormalMap, platformOverriddenTips.overridden);
+            }
+
+            string targetBuildPlatform = toThisFormat.platform;
+
+            // Check if anything needs changing and if so remember that we need to reimport;
+            {
+                if (targetBuildPlatform != null)
+                {
+                    if (platformOverriddenTips.overridden != toThisFormat.doPlatformOverride)
+                    {
+                        // Disable/enable the platform override
+                        platformOverriddenTips.overridden = toThisFormat.doPlatformOverride;
+                        textureImporter.SetPlatformTextureSettings(platformOverriddenTips);
+                        doImport = true;
+                    }
+                }
+
+                if (_ChangeNormalMapTypeIfNecessary(textureImporter, setNormalMap))
+                {
+                    doImport = true;
+                }
+
+                if (platformOverriddenTips.format != toThisFormat.format)
+                {
+                    platformOverriddenTips.format = toThisFormat.format;
+                    textureImporter.SetPlatformTextureSettings(platformOverriddenTips);
+                    doImport = true;
+                }
+            }
+
+            if (doImport)
+            {
+                string s;
+                if (rememberRestoreSettings)
+                {
+                    s = "Setting texture platform override for ";
+                }
+                else
+                {
+                    s = "Restoring texture platform override for ";
+                }
+                s += String.Format("{0}  FROM: isNormal{1} format={2} hadOverride={3} TO: isNormal={4} format={5} hadOverride={6}",
+                                tx, restoreTfi.isNormalMap, restoreTfi.format, restoreTfi.doPlatformOverride,
+                                    setNormalMap, toThisFormat.format, toThisFormat.doPlatformOverride);
+
+                Debug.Log(s);
+                if (doImport && rememberRestoreSettings && !_textureFormatMap_PlatformOverride.ContainsKey(tx))
+                {
+                    RememberTextureFormatChange(tx, restoreTfi);
+                }
+            }
+
+            return doImport;
+        }
+
+        /// <summary>
+        /// Useful for from <--> to truecolor <--> compressed.
+        /// Not useful for setting a texture to a specific compression format (eg DXT5)
+        /// 
+        /// Importer has "Default" PlatformImportSettings which can be overridden by "platform overrides".
+        /// This enables/disables the override and sets the "Defalut" to/from something compressed.
+        /// </summary>
+        private bool _Set_DefaultPlatform_TextureFormatAndEnableDisablePlatformOverride_2017(Texture2D tx, TextureFormatInfo_AbstractDefaultPlatform toThisFormat, bool rememberRestoreSettings, bool setNormalMap, TextureImporter textureImporter)
         {
             /*
              * HOW THE TEXTURE IMPORTER WORKS.
@@ -190,101 +343,103 @@ namespace DigitalOpus.MB.Core
             bool doImport = false;
 
             // Record the old format so we can restore after changing format.
-            string restorePlatform = GetPlatformString();
+            string restoreBuildPlatform = GetPlatformString();
 
             // Get the restore settings
             // First check if there is an override for this platform.
-            TextureImporterPlatformSettings platformTips = textureImporter.GetPlatformTextureSettings(restorePlatform);
-            bool currentHasOverride = platformTips.overridden;
+
+            bool currentHasOverride;
+            {
+                TextureImporterPlatformSettings platformOverriddenTips = textureImporter.GetPlatformTextureSettings(restoreBuildPlatform);
+                currentHasOverride = platformOverriddenTips.overridden;
+            }
 
             // Get the default settings.
-            TextureImporterPlatformSettings defaultTips = textureImporter.GetDefaultPlatformTextureSettings();
-            TextureFormatInfo restoreTfi = new TextureFormatInfo(defaultTips.textureCompression,
-                                                                defaultTips.crunchedCompression,
-                                                                restorePlatform,
-                                                                defaultTips.format,
-                                                                defaultTips.compressionQuality,
-                                                                textureImporter.textureType == TextureImporterType.NormalMap,
-                                                                currentHasOverride);
-            string platform = toThisFormat.platform;
-
-            // Check if we need to reimport;
-            bool isAutoPVRTC = false;
-            if (platform != null)
+            TextureImporterFormat abstractDefaultCurrentFormat;
+            TextureFormatInfo_AbstractDefaultPlatform restoreTfi;
             {
-                if (currentHasOverride != toThisFormat.platformOverride)
+                TextureImporterPlatformSettings defaultTips = textureImporter.GetDefaultPlatformTextureSettings();
+                abstractDefaultCurrentFormat = defaultTips.format;
+                restoreTfi = new TextureFormatInfo_AbstractDefaultPlatform(defaultTips.textureCompression,
+                                                                    defaultTips.crunchedCompression,
+                                                                    restoreBuildPlatform,
+                                                                    defaultTips.format,
+                                                                    defaultTips.compressionQuality,
+                                                                    textureImporter.textureType == TextureImporterType.NormalMap,
+                                                                    currentHasOverride);
+            }
+            string targetBuildPlatform = toThisFormat.platform;
+
+            // Check if anything needs changing and if so remember that we need to reimport;
+            {
+                if (targetBuildPlatform != null)
                 {
-                    // Disable the override
-                    platformTips.overridden = toThisFormat.platformOverride;
-                    textureImporter.SetPlatformTextureSettings(platformTips);
+                    if (currentHasOverride != toThisFormat.doPlatformOverride)
+                    {
+                        // Disable/enable the platform override
+                        TextureImporterPlatformSettings platformOverriddenTips = textureImporter.GetPlatformTextureSettings(restoreBuildPlatform);
+                        platformOverriddenTips.overridden = toThisFormat.doPlatformOverride;
+                        textureImporter.SetPlatformTextureSettings(platformOverriddenTips);
+                        doImport = true;
+                    }
+                }
+
+                if (textureImporter.textureCompression != toThisFormat.abstractDefaultTextureCompression)
+                {
+                    textureImporter.textureCompression = toThisFormat.abstractDefaultTextureCompression;
                     doImport = true;
                 }
 
-                isAutoPVRTC = MBVersionEditor.IsAutoPVRTC(defaultTips.format, textureImporter.GetAutomaticFormat(platform));
-            }
+                if (textureImporter.crunchedCompression != toThisFormat.abstractDefaultDoCrunchCompression)
+                {
+                    textureImporter.crunchedCompression = toThisFormat.abstractDefaultDoCrunchCompression;
+                    doImport = true;
+                }
 
-            //if (isAutoPVRTC && textureImporter.textureCompression != toThisFormat.textureCompression)
-            if (textureImporter.textureCompression != toThisFormat.textureCompression)
-            {
-                textureImporter.textureCompression = toThisFormat.textureCompression;
-                doImport = true;
-            }
+                if (_ChangeNormalMapTypeIfNecessary(textureImporter, setNormalMap))
+                {
+                    doImport = true;
+                }
 
-            if (textureImporter.crunchedCompression != toThisFormat.doCrunchCompression)
-            {
-                textureImporter.crunchedCompression = toThisFormat.doCrunchCompression;
-                doImport = true;
-            }
-
-            if (_ChangeNormalMapTypeIfNecessary(textureImporter, setNormalMap))
-            {
-                doImport = true;
-            }
-
-            if (defaultTips.format != toThisFormat.platformFormat)
-            {
-                TextureImporterPlatformSettings ps =  textureImporter.GetDefaultPlatformTextureSettings();
-                ps.format = toThisFormat.platformFormat;
-                textureImporter.SetPlatformTextureSettings(ps);
-                doImport = true;
+                if (abstractDefaultCurrentFormat != toThisFormat.abstractDefaultPlatformFormat)
+                {
+                    TextureImporterPlatformSettings defTips = textureImporter.GetDefaultPlatformTextureSettings();
+                    defTips.format = toThisFormat.abstractDefaultPlatformFormat;
+                    textureImporter.SetPlatformTextureSettings(defTips);
+                    doImport = true;
+                }
             }
 
             if (doImport)
             {
                 string s;
-                if (addToList)
+                if (rememberRestoreSettings)
                 {
-                    s = "Setting texture compression for ";
+                    s = "Setting DefaultPlatform texture compression for ";
                 }
                 else
                 {
-                    s = "Restoring texture compression for ";
+                    s = "Restoring DefaultPlatform texture compression for ";
                 }
                 s += String.Format("{0}  FROM: compression={1} isNormal{2} format={3} hadOverride={4} TO: compression={5} isNormal={6} format={7} hadOverride={8}",
-                                tx, restoreTfi.textureCompression, restoreTfi.isNormalMap, restoreTfi.platformFormat, restoreTfi.platformOverride,
-                                toThisFormat.textureCompression, setNormalMap, toThisFormat.platformFormat, toThisFormat.platformOverride);
-                /*
-                if (toThisFormat.platform != null)
-                {
-                    s += String.Format(" setting platform override format for platform {0} to {1} compressionQuality {2}", toThisFormat.platform, toThisFormat.platformFormat, toThisFormat.platformCompressionQuality);
-                }
-                */
+                                tx, restoreTfi.abstractDefaultTextureCompression, restoreTfi.isNormalMap, restoreTfi.abstractDefaultPlatformFormat, restoreTfi.doPlatformOverride,
+                                toThisFormat.abstractDefaultTextureCompression, setNormalMap, toThisFormat.abstractDefaultPlatformFormat, toThisFormat.doPlatformOverride);
 
                 Debug.Log(s);
-                if (doImport && addToList && !_textureFormatMap.ContainsKey(tx))
+                if (doImport && rememberRestoreSettings && !_textureFormatMap_DefaultAbstract.ContainsKey(tx))
                 {
-                    _textureFormatMap.Add(tx, restoreTfi);
+                    RememberTextureFormatChange(tx, restoreTfi);
                 }
             }
 
             return doImport;
         }
 
-        private bool _SetTextureFormatUnity5(Texture2D tx, TextureFormatInfo toThisFormat, bool addToList, bool setNormalMap, TextureImporter textureImporter)
+        private bool _SetTextureFormatUnity5(Texture2D tx, TextureFormatInfo_AbstractDefaultPlatform toThisFormat, bool addToList, bool setNormalMap, TextureImporter textureImporter)
         {
             bool doImport = false;
 
-            TextureFormatInfo restoreTfi = new TextureFormatInfo(textureImporter.textureCompression,
+            TextureFormatInfo_AbstractDefaultPlatform restoreTfi = new TextureFormatInfo_AbstractDefaultPlatform(textureImporter.textureCompression,
                                                                 false,
                                                                 toThisFormat.platform,
                                                                 TextureImporterFormat.RGBA32,
@@ -298,20 +453,20 @@ namespace DigitalOpus.MB.Core
                 TextureImporterPlatformSettings tips = textureImporter.GetPlatformTextureSettings(platform);
                 if (tips.overridden)
                 {
-                    restoreTfi.platformFormat = tips.format;
+                    restoreTfi.abstractDefaultPlatformFormat = tips.format;
                     restoreTfi.platformCompressionQuality = tips.compressionQuality;
                     TextureImporterPlatformSettings tipsOverridden = new TextureImporterPlatformSettings();
                     tips.CopyTo(tipsOverridden);
                     tipsOverridden.compressionQuality = toThisFormat.platformCompressionQuality;
-                    tipsOverridden.format = toThisFormat.platformFormat;
+                    tipsOverridden.format = toThisFormat.abstractDefaultPlatformFormat;
                     textureImporter.SetPlatformTextureSettings(tipsOverridden);
                     doImport = true;
                 }
             }
 
-            if (textureImporter.textureCompression != toThisFormat.textureCompression)
+            if (textureImporter.textureCompression != toThisFormat.abstractDefaultTextureCompression)
             {
-                textureImporter.textureCompression = toThisFormat.textureCompression;
+                textureImporter.textureCompression = toThisFormat.abstractDefaultTextureCompression;
                 doImport = true;
             }
 
@@ -326,16 +481,16 @@ namespace DigitalOpus.MB.Core
                 {
                     s = "Restoring texture compression for ";
                 }
-                s += String.Format("{0}  FROM: compression={1} isNormal{2} TO: compression={3} isNormal={4} ", tx, restoreTfi.textureCompression, restoreTfi.isNormalMap, toThisFormat.textureCompression, setNormalMap);
+                s += String.Format("{0}  FROM: compression={1} isNormal{2} TO: compression={3} isNormal={4} ", tx, restoreTfi.abstractDefaultTextureCompression, restoreTfi.isNormalMap, toThisFormat.abstractDefaultTextureCompression, setNormalMap);
                 if (toThisFormat.platform != null)
                 {
-                    s += String.Format(" setting platform override format for platform {0} to {1} compressionQuality {2}", toThisFormat.platform, toThisFormat.platformFormat, toThisFormat.platformCompressionQuality);
+                    s += String.Format(" setting platform override format for platform {0} to {1} compressionQuality {2}", toThisFormat.platform, toThisFormat.abstractDefaultPlatformFormat, toThisFormat.platformCompressionQuality);
                 }
                 Debug.Log(s);
             }
-            if (doImport && addToList && !_textureFormatMap.ContainsKey(tx))
+            if (doImport && addToList && !_textureFormatMap_DefaultAbstract.ContainsKey(tx))
             {
-                _textureFormatMap.Add(tx, restoreTfi);
+                RememberTextureFormatChange(tx, restoreTfi);
             }
             return doImport;
         }
@@ -368,8 +523,8 @@ namespace DigitalOpus.MB.Core
             return false;
         }
 #else
-        // 5_4 and earlier
-        class TextureFormatInfo
+                // 5_4 and earlier
+            class TextureFormatInfo
         {
             public TextureImporterFormat format;
             public bool isNormalMap;
@@ -496,19 +651,33 @@ namespace DigitalOpus.MB.Core
 
         public void RestoreReadFlagsAndFormats(ProgressUpdateDelegate progressInfo)
         {
-            for (int i = 0; i < _texturesWithReadWriteFlagSet.Count; i++)
             {
-                if (progressInfo != null) progressInfo("Restoring read flag for " + _texturesWithReadWriteFlagSet[i], .9f);
-                SetReadWriteFlag(_texturesWithReadWriteFlagSet[i], false, false);
-            }
-            _texturesWithReadWriteFlagSet.Clear();
-            foreach (Texture2D tex in _textureFormatMap.Keys)
-            {
-                if (progressInfo != null) progressInfo("Restoring format for " + tex, .9f);
-                _SetTextureFormat(tex, _textureFormatMap[tex], false, _textureFormatMap[tex].isNormalMap);
+                for (int i = 0; i < _texturesWithReadWriteFlagSet.Count; i++)
+                {
+                    if (progressInfo != null) progressInfo("Restoring read flag for " + _texturesWithReadWriteFlagSet[i], .9f);
+                    SetReadWriteFlag(_texturesWithReadWriteFlagSet[i], false, false);
+                }
+                _texturesWithReadWriteFlagSet.Clear();
             }
 
-            _textureFormatMap.Clear();
+            {
+                foreach (Texture2D tex in _textureFormatMap_DefaultAbstract.Keys)
+                {
+                    if (progressInfo != null) progressInfo("Restoring format for " + tex, .9f);
+                    _SetTextureFormat_DefaultPlatform(tex, _textureFormatMap_DefaultAbstract[tex], false, _textureFormatMap_DefaultAbstract[tex].isNormalMap);
+                }
+                _textureFormatMap_DefaultAbstract.Clear();
+            }
+
+            {
+                foreach (Texture2D tex in _textureFormatMap_PlatformOverride.Keys)
+                {
+                    if (progressInfo != null) progressInfo("Restoring format for " + tex, .9f);
+                    _SetTextureFormat_PlatformOverride(tex, _textureFormatMap_PlatformOverride[tex], false, _textureFormatMap_PlatformOverride[tex].isNormalMap);
+                }
+                _textureFormatMap_PlatformOverride.Clear();
+            }
+
         }
 
 
@@ -587,11 +756,14 @@ namespace DigitalOpus.MB.Core
          pass in System.IO.File.WriteAllBytes for parameter fileSaveFunction. This is necessary because on Web Player file saving
          functions only exist for Editor classes
          */
-        public void SaveAtlasToAssetDatabase(Texture2D atlas, ShaderTextureProperty texPropertyName, int atlasNum, Material resMat)
+        public void SaveAtlasToAssetDatabase(Texture2D atlas, ShaderTextureProperty texPropertyName, int atlasNum, bool doAnySrcMatsHaveProperty, Material resMat)
         {
             if (atlas == null)
             {
-                SetMaterialTextureProperty(resMat, texPropertyName, null);
+                if (doAnySrcMatsHaveProperty)
+                { 
+                    SetMaterialTextureProperty(resMat, texPropertyName, null);
+                }
             }
             else
             {
@@ -626,7 +798,10 @@ namespace DigitalOpus.MB.Core
                     Debug.Log(String.Format("Wrote atlas for {0} to file:{1}", texPropertyName.name, pth));
                     Texture2D txx = (Texture2D)(AssetDatabase.LoadAssetAtPath(relativePath, typeof(Texture2D)));
                     SetTextureSize(txx, size);
-                    SetMaterialTextureProperty(resMat, texPropertyName, relativePath);
+                    if (doAnySrcMatsHaveProperty)
+                    {
+                        SetMaterialTextureProperty(resMat, texPropertyName, relativePath);
+                    }
                 }
             }
         }
@@ -747,23 +922,39 @@ namespace DigitalOpus.MB.Core
                 Renderer r = MB_Utility.GetRenderer(objs[i]);
                 if (r is SkinnedMeshRenderer)
                 {
-                    Transform[] bones = ((SkinnedMeshRenderer)r).bones;
-                    if (bones.Length == 0)
+                    Mesh m = MB_Utility.GetMesh(objs[i]);
+                    if (m != null)
                     {
-                        Debug.LogWarning("SkinnedMesh " + i + " (" + objs[i] + ") in the list of objects to combine has no bones. Check that 'optimize game object' is not checked in the 'Rig' tab of the asset importer. Mesh Baker cannot combine optimized skinned meshes because the bones are not available.");
+                        Matrix4x4[] bindposes = m.bindposes;
+                        if (bindposes.Length > 0)
+                        {
+                            // There should be a 1-to-1 match between bindposes and bones;
+                            Transform[] bones = ((SkinnedMeshRenderer)r).bones;
+                            if (bones.Length == 0)
+                            {
+                                Debug.LogWarning("SkinnedMesh " + i + " (" + objs[i] + ") in the list of objects to combine has no bones. Check that 'optimize game object' is not checked in the 'Rig' tab of the asset importer. Mesh Baker cannot combine optimized skinned meshes because the bones are not available.");
+                            }
+                            //					UnityEngine.Object parentObject = EditorUtility.GetPrefabParent(r.gameObject);
+                            //					string path = AssetDatabase.GetAssetPath(parentObject);
+                            //					Debug.Log (path);
+                            //					AssetImporter ai = AssetImporter.GetAtPath( path );
+                            //					Debug.Log ("bbb " + ai);
+                            //					if (ai != null && ai is ModelImporter){
+                            //						Debug.Log ("valing 2");
+                            //						ModelImporter modelImporter = (ModelImporter) ai;
+                            //						if(modelImporter.optimizeMesh){
+                            //							Debug.LogError("SkinnedMesh " + i + " (" + objs[i] + ") in the list of objects to combine is optimized. Mesh Baker cannot combine optimized skinned meshes because the bones are not available.");
+                            //						}
+                            //					}
+                        } else
+                        {
+                            // This was a skinned mesh with no bindposes (bones). This is allowed if there are blendshapes
+                            if (m.blendShapeCount == 0)
+                            {
+                                Debug.LogWarning("SkinnedMesh " + i + " (" + objs[i] + ") in the list of objects to combine has no bindposes or blendshapes. Should this renderer be a MeshRenderer?");
+                            }
+                        }
                     }
-                    //					UnityEngine.Object parentObject = EditorUtility.GetPrefabParent(r.gameObject);
-                    //					string path = AssetDatabase.GetAssetPath(parentObject);
-                    //					Debug.Log (path);
-                    //					AssetImporter ai = AssetImporter.GetAtPath( path );
-                    //					Debug.Log ("bbb " + ai);
-                    //					if (ai != null && ai is ModelImporter){
-                    //						Debug.Log ("valing 2");
-                    //						ModelImporter modelImporter = (ModelImporter) ai;
-                    //						if(modelImporter.optimizeMesh){
-                    //							Debug.LogError("SkinnedMesh " + i + " (" + objs[i] + ") in the list of objects to combine is optimized. Mesh Baker cannot combine optimized skinned meshes because the bones are not available.");
-                    //						}
-                    //					}
                 }
             }
             return true;
@@ -886,7 +1077,7 @@ namespace DigitalOpus.MB.Core
             return isAsset;
         }
 
-        public Texture2D CreateTemporaryAssetCopy(Texture2D sliceTex, int w, int h, TextureFormat format, MB2_LogLevel logLevel)
+        public Texture2D CreateTemporaryAssetCopy(ShaderTextureProperty shaderProp, Texture2D sliceTex, int w, int h, TextureFormat format, MB2_LogLevel logLevel)
         {
             bool foundMatch;
             UnityEditor.TextureImporterFormat targetImporterFormat = Map_TextureFormat_2_TextureImporterFormat(format, out foundMatch);
@@ -894,6 +1085,16 @@ namespace DigitalOpus.MB.Core
             {
                 Debug.LogError("Could not find target importer format matching " + format);
                 return null;
+            }
+
+            // Can't do a pixel copy with normal maps because unity has swizzled the color channels. Turn of the TextureType:Normal first.
+            if (shaderProp.isNormalMap)
+            {
+                if (!_textureFormatMap_DefaultAbstract.ContainsKey(sliceTex) 
+                    && !_textureFormatMap_PlatformOverride.ContainsKey(sliceTex))
+                {
+                    ConvertTextureFormat_DefaultPlatform(sliceTex, TextureFormat.RGBA32, isNormalMap:false);
+                }
             }
 
             string workingFolder = MB_EditorUtil.GetShortPathToWorkingDirectoryAndEnsureItExists();
@@ -939,179 +1140,7 @@ namespace DigitalOpus.MB.Core
 
         public static TextureImporterFormat Map_TextureFormat_2_TextureImporterFormat(TextureFormat texFormat, out bool success)
         {
-            TextureImporterFormat texImporterFormat;
-            success = true;
-            switch (texFormat)
-            {
-                case TextureFormat.ARGB32:
-                    texImporterFormat = TextureImporterFormat.ARGB32;
-                    break;
-                case TextureFormat.RGBA32:
-                    texImporterFormat = TextureImporterFormat.RGBA32;
-                    break;
-                case TextureFormat.RGB24:
-                    texImporterFormat = TextureImporterFormat.RGB24;
-                    break;
-                case TextureFormat.Alpha8:
-                    texImporterFormat = TextureImporterFormat.Alpha8;
-                    break;
-
-                case TextureFormat.ASTC_10x10:
-                    texImporterFormat = TextureImporterFormat.ASTC_10x10;
-                    break;
-                case TextureFormat.ASTC_12x12:
-                    texImporterFormat = TextureImporterFormat.ASTC_12x12;
-                    break;
-                case TextureFormat.ASTC_4x4:
-                    texImporterFormat = TextureImporterFormat.ASTC_4x4;
-                    break;
-                case TextureFormat.ASTC_5x5:
-                    texImporterFormat = TextureImporterFormat.ASTC_5x5;
-                    break;
-                case TextureFormat.ASTC_6x6:
-                    texImporterFormat = TextureImporterFormat.ASTC_6x6;
-                    break;
-                case TextureFormat.ASTC_8x8:
-                    texImporterFormat = TextureImporterFormat.ASTC_8x8;
-                    break;
-
-                //case TextureFormat.ASTC_10x10:
-                //    texImporterFormat = TextureImporterFormat.ASTC_10x10;
-                //    break;
-                //case TextureFormat.ASTC_12x12:
-                //    texImporterFormat = TextureImporterFormat.ASTC_12x12;
-                //    break;
-                //case TextureFormat.ASTC_4x4:
-                //    texImporterFormat = TextureImporterFormat.ASTC_4x4;
-                //    break;
-                //case TextureFormat.ASTC_5x5:
-                //    texImporterFormat = TextureImporterFormat.ASTC_5x5;
-                //    break;
-                //case TextureFormat.ASTC_6x6:
-                //    texImporterFormat = TextureImporterFormat.ASTC_6x6;
-                //    break;
-                //case TextureFormat.ASTC_8x8:
-                //    texImporterFormat = TextureImporterFormat.ASTC_8x8;
-                //    break;
-
-                case TextureFormat.BC4:
-                    texImporterFormat = TextureImporterFormat.BC4;
-                    break;
-                case TextureFormat.BC5:
-                    texImporterFormat = TextureImporterFormat.BC5;
-                    break;
-                case TextureFormat.BC6H:
-                    texImporterFormat = TextureImporterFormat.BC6H;
-                    break;
-                case TextureFormat.BC7:
-                    texImporterFormat = TextureImporterFormat.BC7;
-                    break;
-
-                case TextureFormat.DXT1:
-                    texImporterFormat = TextureImporterFormat.DXT1;
-                    break;
-                case TextureFormat.DXT1Crunched:
-                    texImporterFormat = TextureImporterFormat.DXT1Crunched;
-                    break;
-                case TextureFormat.DXT5:
-                    texImporterFormat = TextureImporterFormat.DXT5;
-                    break;
-                case TextureFormat.DXT5Crunched:
-                    texImporterFormat = TextureImporterFormat.DXT5Crunched;
-                    break;
-
-                case TextureFormat.EAC_R:
-                    texImporterFormat = TextureImporterFormat.EAC_R;
-                    break;
-                case TextureFormat.EAC_RG:
-                    texImporterFormat = TextureImporterFormat.EAC_RG;
-                    break;
-                case TextureFormat.EAC_RG_SIGNED:
-                    texImporterFormat = TextureImporterFormat.EAC_RG_SIGNED;
-                    break;
-                case TextureFormat.EAC_R_SIGNED:
-                    texImporterFormat = TextureImporterFormat.EAC_R_SIGNED;
-                    break;
-
-                case TextureFormat.ETC_RGB4:
-                    texImporterFormat = TextureImporterFormat.ETC_RGB4;
-                    break;
-#if UNITY_2017_3_OR_NEWER
-                case TextureFormat.ETC_RGB4Crunched:
-                    texImporterFormat = TextureImporterFormat.ETC_RGB4Crunched;
-                    break;
-#endif
-                case TextureFormat.ETC2_RGB:
-                    texImporterFormat = TextureImporterFormat.ETC2_RGB4;
-                    break;
-                case TextureFormat.ETC2_RGBA8:
-                    texImporterFormat = TextureImporterFormat.ETC2_RGBA8;
-                    break;
-#if UNITY_2017_3_OR_NEWER
-                case TextureFormat.ETC2_RGBA8Crunched:
-                    texImporterFormat = TextureImporterFormat.ETC2_RGBA8Crunched;
-                    break;
-#endif
-                case TextureFormat.PVRTC_RGB2:
-                    texImporterFormat = TextureImporterFormat.PVRTC_RGB2;
-                    break;
-                case TextureFormat.PVRTC_RGB4:
-                    texImporterFormat = TextureImporterFormat.PVRTC_RGB4;
-                    break;
-                case TextureFormat.PVRTC_RGBA2:
-                    texImporterFormat = TextureImporterFormat.PVRTC_RGBA2;
-                    break;
-                case TextureFormat.PVRTC_RGBA4:
-                    texImporterFormat = TextureImporterFormat.PVRTC_RGBA4;
-                    break;
-#if UNITY_2018_3_OR_NEWER
-                case TextureFormat.R16:
-                    texImporterFormat = TextureImporterFormat.R16;
-                    break;
-#endif
-#if UNITY_2018_2_OR_NEWER
-                case TextureFormat.R8:
-                    texImporterFormat = TextureImporterFormat.R8;
-                    break;
-#endif
-#if UNITY_2018_3_OR_NEWER
-                case TextureFormat.RFloat:
-                    texImporterFormat = TextureImporterFormat.RFloat;
-                    break;
-#endif
-#if UNITY_2018_3_OR_NEWER
-                case TextureFormat.RG16:
-                    texImporterFormat = TextureImporterFormat.RG16;
-                    break;
-#endif
-#if UNITY_2018_3_OR_NEWER
-                case TextureFormat.RGB9e5Float:
-                    texImporterFormat = TextureImporterFormat.RGB9E5;
-                    break;
-#endif
-#if UNITY_2018_3_OR_NEWER
-                case TextureFormat.RGHalf:
-                    texImporterFormat = TextureImporterFormat.RGHalf;
-                    break;
-#endif
-#if UNITY_2018_3_OR_NEWER
-                case TextureFormat.RGFloat:
-                    texImporterFormat = TextureImporterFormat.RGFloat;
-                    break;
-#endif
-#if UNITY_2018_3_OR_NEWER
-                case TextureFormat.RHalf:
-                    texImporterFormat = TextureImporterFormat.RHalf;
-                    break;
-#endif
-                default:
-                    texImporterFormat = TextureImporterFormat.ARGB32;
-                    success = false;
-                    Debug.LogError("No mapping for TextureFormat: " + texFormat + " to a TextureImporterFormat. ");
-                    break;
-            }
-
-            return texImporterFormat; 
+            return MBVersionEditor.Map_TextureFormat_2_TextureImporterFormat(texFormat, out success); 
         }
 
         public bool TextureImporterFormatExistsForTextureFormat(TextureFormat texFormat)

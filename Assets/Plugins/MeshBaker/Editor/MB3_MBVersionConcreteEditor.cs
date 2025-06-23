@@ -274,5 +274,202 @@ namespace DigitalOpus.MB.Core
             return PrefabUtility.FindRootGameObjectWithSameParentPrefab(sceneInstance);
 #endif
         }
+
+        public TextureImporterFormat Map_TextureFormat_2_TextureImporterFormat(TextureFormat texFormat, out bool success)
+        {
+            TextureImporterFormat texImporterFormat;
+            success = true;
+            switch (texFormat)
+            {
+                case TextureFormat.ARGB32:
+                    texImporterFormat = TextureImporterFormat.ARGB32;
+                    break;
+                case TextureFormat.RGBA32:
+                    texImporterFormat = TextureImporterFormat.RGBA32;
+                    break;
+                case TextureFormat.RGB24:
+                    texImporterFormat = TextureImporterFormat.RGB24;
+                    break;
+                case TextureFormat.Alpha8:
+                    texImporterFormat = TextureImporterFormat.Alpha8;
+                    break;
+
+#if UNITY_2020_1_OR_NEWER
+                case TextureFormat.ASTC_10x10:
+                    texImporterFormat = TextureImporterFormat.ASTC_10x10;
+                    break;
+                case TextureFormat.ASTC_12x12:
+                    texImporterFormat = TextureImporterFormat.ASTC_12x12;
+                    break;
+                case TextureFormat.ASTC_4x4:
+                    texImporterFormat = TextureImporterFormat.ASTC_4x4;
+                    break;
+                case TextureFormat.ASTC_5x5:
+                    texImporterFormat = TextureImporterFormat.ASTC_5x5;
+                    break;
+                case TextureFormat.ASTC_6x6:
+                    texImporterFormat = TextureImporterFormat.ASTC_6x6;
+                    break;
+                case TextureFormat.ASTC_8x8:
+                    texImporterFormat = TextureImporterFormat.ASTC_8x8;
+                    break;
+#else
+                case TextureFormat.ASTC_RGBA_10x10:
+                    texImporterFormat = TextureImporterFormat.ASTC_RGBA_10x10;
+                    break;
+                case TextureFormat.ASTC_RGBA_12x12:
+                    texImporterFormat = TextureImporterFormat.ASTC_RGBA_12x12;
+                    break;
+                case TextureFormat.ASTC_RGBA_4x4:
+                    texImporterFormat = TextureImporterFormat.ASTC_RGBA_4x4;
+                    break;
+                case TextureFormat.ASTC_RGBA_5x5:
+                    texImporterFormat = TextureImporterFormat.ASTC_RGBA_5x5;
+                    break;
+                case TextureFormat.ASTC_RGBA_6x6:
+                    texImporterFormat = TextureImporterFormat.ASTC_RGBA_6x6;
+                    break;
+                case TextureFormat.ASTC_RGBA_8x8:
+                    texImporterFormat = TextureImporterFormat.ASTC_RGBA_8x8;
+                    break;
+
+                case TextureFormat.ASTC_RGB_10x10:
+                    texImporterFormat = TextureImporterFormat.ASTC_RGB_10x10;
+                    break;
+                case TextureFormat.ASTC_RGB_12x12:
+                    texImporterFormat = TextureImporterFormat.ASTC_RGB_12x12;
+                    break;
+                case TextureFormat.ASTC_RGB_4x4:
+                    texImporterFormat = TextureImporterFormat.ASTC_RGB_4x4;
+                    break;
+                case TextureFormat.ASTC_RGB_5x5:
+                    texImporterFormat = TextureImporterFormat.ASTC_RGB_5x5;
+                    break;
+                case TextureFormat.ASTC_RGB_6x6:
+                    texImporterFormat = TextureImporterFormat.ASTC_RGB_6x6;
+                    break;
+                case TextureFormat.ASTC_RGB_8x8:
+                    texImporterFormat = TextureImporterFormat.ASTC_RGB_8x8;
+                    break;
+#endif
+                case TextureFormat.BC4:
+                    texImporterFormat = TextureImporterFormat.BC4;
+                    break;
+                case TextureFormat.BC5:
+                    texImporterFormat = TextureImporterFormat.BC5;
+                    break;
+                case TextureFormat.BC6H:
+                    texImporterFormat = TextureImporterFormat.BC6H;
+                    break;
+                case TextureFormat.BC7:
+                    texImporterFormat = TextureImporterFormat.BC7;
+                    break;
+
+                case TextureFormat.DXT1:
+                    texImporterFormat = TextureImporterFormat.DXT1;
+                    break;
+                case TextureFormat.DXT1Crunched:
+                    texImporterFormat = TextureImporterFormat.DXT1Crunched;
+                    break;
+                case TextureFormat.DXT5:
+                    texImporterFormat = TextureImporterFormat.DXT5;
+                    break;
+                case TextureFormat.DXT5Crunched:
+                    texImporterFormat = TextureImporterFormat.DXT5Crunched;
+                    break;
+
+                case TextureFormat.EAC_R:
+                    texImporterFormat = TextureImporterFormat.EAC_R;
+                    break;
+                case TextureFormat.EAC_RG:
+                    texImporterFormat = TextureImporterFormat.EAC_RG;
+                    break;
+                case TextureFormat.EAC_RG_SIGNED:
+                    texImporterFormat = TextureImporterFormat.EAC_RG_SIGNED;
+                    break;
+                case TextureFormat.EAC_R_SIGNED:
+                    texImporterFormat = TextureImporterFormat.EAC_R_SIGNED;
+                    break;
+
+                case TextureFormat.ETC_RGB4:
+                    texImporterFormat = TextureImporterFormat.ETC_RGB4;
+                    break;
+#if UNITY_2017_3_OR_NEWER
+                case TextureFormat.ETC_RGB4Crunched:
+                    texImporterFormat = TextureImporterFormat.ETC_RGB4Crunched;
+                    break;
+#endif
+                case TextureFormat.ETC2_RGB:
+                    texImporterFormat = TextureImporterFormat.ETC2_RGB4;
+                    break;
+                case TextureFormat.ETC2_RGBA8:
+                    texImporterFormat = TextureImporterFormat.ETC2_RGBA8;
+                    break;
+#if UNITY_2017_3_OR_NEWER
+                case TextureFormat.ETC2_RGBA8Crunched:
+                    texImporterFormat = TextureImporterFormat.ETC2_RGBA8Crunched;
+                    break;
+#endif
+                case TextureFormat.PVRTC_RGB2:
+                    texImporterFormat = TextureImporterFormat.PVRTC_RGB2;
+                    break;
+                case TextureFormat.PVRTC_RGB4:
+                    texImporterFormat = TextureImporterFormat.PVRTC_RGB4;
+                    break;
+                case TextureFormat.PVRTC_RGBA2:
+                    texImporterFormat = TextureImporterFormat.PVRTC_RGBA2;
+                    break;
+                case TextureFormat.PVRTC_RGBA4:
+                    texImporterFormat = TextureImporterFormat.PVRTC_RGBA4;
+                    break;
+#if UNITY_2018_3_OR_NEWER
+                case TextureFormat.R16:
+                    texImporterFormat = TextureImporterFormat.R16;
+                    break;
+#endif
+#if UNITY_2018_2_OR_NEWER
+                case TextureFormat.R8:
+                    texImporterFormat = TextureImporterFormat.R8;
+                    break;
+#endif
+#if UNITY_2018_3_OR_NEWER
+                case TextureFormat.RFloat:
+                    texImporterFormat = TextureImporterFormat.RFloat;
+                    break;
+#endif
+#if UNITY_2018_3_OR_NEWER
+                case TextureFormat.RG16:
+                    texImporterFormat = TextureImporterFormat.RG16;
+                    break;
+#endif
+#if UNITY_2018_3_OR_NEWER
+                case TextureFormat.RGB9e5Float:
+                    texImporterFormat = TextureImporterFormat.RGB9E5;
+                    break;
+#endif
+#if UNITY_2018_3_OR_NEWER
+                case TextureFormat.RGHalf:
+                    texImporterFormat = TextureImporterFormat.RGHalf;
+                    break;
+#endif
+#if UNITY_2018_3_OR_NEWER
+                case TextureFormat.RGFloat:
+                    texImporterFormat = TextureImporterFormat.RGFloat;
+                    break;
+#endif
+#if UNITY_2018_3_OR_NEWER
+                case TextureFormat.RHalf:
+                    texImporterFormat = TextureImporterFormat.RHalf;
+                    break;
+#endif
+                default:
+                    texImporterFormat = TextureImporterFormat.ARGB32;
+                    success = false;
+                    Debug.LogError("No mapping for TextureFormat: " + texFormat + " to a TextureImporterFormat. ");
+                    break;
+            }
+
+            return texImporterFormat;
+        }
     }
 }

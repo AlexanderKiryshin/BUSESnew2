@@ -7,14 +7,15 @@ using System.Threading.Tasks;
 using UnityEngine.Networking;
 using UnityEngine.UI;
 using UnityEngine;
+using TMPro;
 
 namespace Assets._scripts.UI
 {
     public class Player : MonoBehaviour
     {
-        [SerializeField] private Text _position;
-        [SerializeField] private Text _score;
-        [SerializeField] private Text _name;
+        [SerializeField] private TextMeshProUGUI _position;
+        [SerializeField] private TextMeshProUGUI _score;
+        [SerializeField] private TextMeshProUGUI _name;
         [SerializeField] private Image _background;
         [SerializeField] private RawImage targetImage;
         [SerializeField] private Color _firstPlaceColor;

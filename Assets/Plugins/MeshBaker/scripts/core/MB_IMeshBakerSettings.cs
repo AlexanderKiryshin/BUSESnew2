@@ -35,6 +35,10 @@ namespace DigitalOpus.MB.Core
         Vector3 pivotLocation { get; set; }
         bool clearBuffersAfterBake { get; set; }
         MB_RenderType renderType { get; set; }
+        bool smrNoExtraBonesWhenCombiningMeshRenderers { get; set; }
+
+        bool smrMergeBlendShapesWithSameNames { get; set; }
+
         IAssignToMeshCustomizer assignToMeshCustomizer { get; set; }
     }
 }

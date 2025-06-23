@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEngine.UI;
+using TMPro;
 
 namespace Assets._scripts.UI
 {
@@ -15,10 +16,12 @@ namespace Assets._scripts.UI
     {
         [SerializeField] private Player playerPrefab;
         [SerializeField] private Transform _scrollView;
-        [SerializeField] private Text _leaderboardName;
+        [SerializeField] private TextMeshProUGUI _leaderboardName;
         [SerializeField] private int leaderbordCount = 100;
+        private List<Player> _players;
         public void Open()
         {
+            _players = new List<Player>();
             MirraSDK.Achievements.GetLeaderboard("score", OnScoreTableResolve);
             gameObject.SetActive(true);
             //MirraSDK.Socials.GetScoreTable("score", 3, true, 3, OnScoreTableResolve, OnScoreTableError);
@@ -27,6 +30,10 @@ namespace Assets._scripts.UI
         public void Close()
         {
             gameObject.SetActive(false);
+            foreach (var player in _players)
+            {
+                Destroy(player.gameObject);
+            }
         }
         public void OnScoreTableResolve(Leaderboard table)
         {
@@ -77,6 +84,7 @@ namespace Assets._scripts.UI
             for (int i = 0; i < players.Count; i++)
             {
                 Player playerGO = Instantiate(playerPrefab, _scrollView);
+                _players.Add(playerGO);
                 if (player[0].position - 1 == i)
                 {
                     playerGO.SetStatistic(players[i].position, players[i].displayName, players[i].score, players[i].profilePictureUrl, true);

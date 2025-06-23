@@ -44,9 +44,18 @@ namespace DigitalOpus.MB.MBEditor
             gc_PivotLocation = new GUIContent("Pivot Location"),
             gc_OptimizeAfterBake = new GUIContent("Optimize After Bake", "This does the same thing that 'Optimize' does on the ModelImporter."),
             gc_AssignMeshCusomizer = new GUIContent("Assign To Mesh Customizer", "This is a custom script that can be used to alter data just before channels are assigned to the mesh." +
-                                                " It could be used for example to inject a Texture Array slice index into mesh coordinate (uv.z or colors.a).");
+                                                " It could be used for example to inject a Texture Array slice index into mesh coordinate (uv.z or colors.a)."),
+            gc_smrNoExtraBonesWhenCombiningMeshRenderers = new GUIContent("No Extra Bones For Mesh Renderers", "If a MeshRenderer is a child of another bone in the hierarchy (e.g. a sword is a child of a hand bone), then the MeshRenderer's vertices " +
+                                                " will be merged with the parent bone's vertices eliminating the extra bone (the sword becomes part of the hand). This reduces the bone count, but the MeshRenderer can never be moved independently of its parent.\n\n" +
+                                                "If you want some bones merged and some bones Independent, then move the 'Independent' bones in the hierarchy so that they are not descendants of other bones before baking. They can be re-parented after baking."),
+            gc_smrMergeBlendShapesWithSameNames = new GUIContent("Merge Blend Shapes With Same Names", "Enable this if you are combining multiple skinned meshes on a single rig (mixing and matching different body part variations and clothes) and the body parts have the " +
+                                                " same blend shape names. The combined mesh will preserve the original blend shape names. All blend shapes with the same name will activate in lockstep\n\n" +
+                                                "Disable this if you are combining multiple characters into a single combined skinned mesh and want to be able to activate the blend shapes on the different characters independently. " +
+                                                " the blend shapes will be re-named. Use the MB_BlendShape2CombinedMap component to control which blend shape activate.");
+
 
         private SerializedProperty doNorm, doTan, doUV, doUV3, doUV4, doUV5, doUV6, doUV7, doUV8, doCol, doBlendShapes, lightmappingOption, renderType, clearBuffersAfterBake, uv2OutputParamsPackingMargin, uv2OutputParamsHardAngle, pivotLocationType, pivotLocation, optimizeAfterBake, assignToMeshCustomizer;
+        private SerializedProperty smrNoExtraBonesWhenCombiningMeshRenderers, smrMergeBlendShapesWithSameNames;
         private MB_EditorStyles editorStyles = new MB_EditorStyles();
 
         /// <summary>
@@ -98,6 +107,8 @@ namespace DigitalOpus.MB.MBEditor
             pivotLocation = combiner.FindPropertyRelative("_pivotLocation");
             optimizeAfterBake = combiner.FindPropertyRelative("_optimizeAfterBake");
             assignToMeshCustomizer = combiner.FindPropertyRelative("_assignToMeshCustomizer");
+            smrNoExtraBonesWhenCombiningMeshRenderers = combiner.FindPropertyRelative("_smrNoExtraBonesWhenCombiningMeshRenderers");
+            smrMergeBlendShapesWithSameNames = combiner.FindPropertyRelative("_smrMergeBlendShapesWithSameNames");
             editorStyles.Init();
         }
 
@@ -156,6 +167,9 @@ namespace DigitalOpus.MB.MBEditor
             
 
             EditorGUILayout.PropertyField(renderType, gc_renderTypeGUIContent);
+
+
+
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.PropertyField(clearBuffersAfterBake, gc_clearBuffersAfterBakeGUIContent);
             EditorGUILayout.EndHorizontal();
@@ -165,8 +179,16 @@ namespace DigitalOpus.MB.MBEditor
                 EditorGUILayout.PropertyField(pivotLocation, gc_PivotLocation);
             }
             EditorGUILayout.PropertyField(optimizeAfterBake, gc_OptimizeAfterBake);
+            
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Advanced", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Skinned Mesh Renderer Settings", EditorStyles.boldLabel);
+            EditorGUI.BeginDisabledGroup((MB_RenderType)renderType.intValue != MB_RenderType.skinnedMeshRenderer);
+            EditorGUILayout.PropertyField(smrNoExtraBonesWhenCombiningMeshRenderers, gc_smrNoExtraBonesWhenCombiningMeshRenderers);
+            EditorGUILayout.PropertyField(smrMergeBlendShapesWithSameNames, gc_smrMergeBlendShapesWithSameNames);
+            EditorGUI.EndDisabledGroup();
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Advanced Settings", EditorStyles.boldLabel);
 
             // Don't use a PropertyField because we may not be able to use the assigned object. It may not implement requried interface.
 

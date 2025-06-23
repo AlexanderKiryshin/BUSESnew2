@@ -7,6 +7,11 @@ namespace DigitalOpus.MB.Core
 {
     internal class MB3_TextureCombinerPackerMeshBakerFast : MB_ITextureCombinerPacker
     {
+        public bool Validate(MB3_TextureCombinerPipeline.TexturePipelineData data)
+        {
+            return true;
+        }
+
         public IEnumerator ConvertTexturesToReadableFormats(ProgressUpdateDelegate progressInfo,
             MB3_TextureCombiner.CombineTexturesIntoAtlasesCoroutineResult result,
             MB3_TextureCombinerPipeline.TexturePipelineData data,
@@ -45,7 +50,7 @@ namespace DigitalOpus.MB.Core
                 renderAtlasesGO = new GameObject("MBrenderAtlasesGO");
                 MB3_AtlasPackerRenderTexture atlasRenderTexture = renderAtlasesGO.AddComponent<MB3_AtlasPackerRenderTexture>();
                 renderAtlasesGO.AddComponent<Camera>();
-                if (data._considerNonTextureProperties && LOG_LEVEL >= MB2_LogLevel.warn) Debug.LogWarning("Blend Non-Texture Properties has limited functionality when used with Mesh Baker Texture Packer Fast.");
+                if (data._considerNonTextureProperties && LOG_LEVEL >= MB2_LogLevel.warn) Debug.LogError("Blend Non-Texture Properties has limited functionality when used with Mesh Baker Texture Packer Fast. If no texture is pesent, then a small texture matching the non-texture property will be created and used in the atlas. But non-texture properties will not be blended into texture.");
 
                 for (int propIdx = 0; propIdx < data.numAtlases; propIdx++)
                 {
@@ -88,24 +93,16 @@ namespace DigitalOpus.MB.Core
                     if (progressInfo != null) progressInfo("Saving atlas: '" + data.texPropertyNames[propIdx].name + "'", .04f);
                     if (data.resultType == MB2_TextureBakeResults.ResultType.atlas)
                     {
-                        if (data._saveAtlasesAsAssets && textureEditorMethods != null)
-                        {
-                            textureEditorMethods.SaveAtlasToAssetDatabase(atlases[propIdx], data.texPropertyNames[propIdx], propIdx, data.resultMaterial);
-                        }
-                        else
-                        {
-                            data.resultMaterial.SetTexture(data.texPropertyNames[propIdx].name, atlases[propIdx]);
-                        }
-                        data.resultMaterial.SetTextureOffset(data.texPropertyNames[propIdx].name, Vector2.zero);
-                        data.resultMaterial.SetTextureScale(data.texPropertyNames[propIdx].name, Vector2.one);
+                        MB3_TextureCombinerPackerRoot.SaveAtlasAndConfigureResultMaterial(data, textureEditorMethods, atlases[propIdx], data.texPropertyNames[propIdx], propIdx);
                     }
+
                     combiner._destroyTemporaryTextures(data.texPropertyNames[propIdx].name); // need to save atlases before doing this				
                 }
             }
             catch (Exception ex)
             {
                 //Debug.LogError(ex);
-                Debug.LogException(ex);
+                Debug.LogError(ex.Message + "\n" + ex.StackTrace.ToString());
             }
             finally
             {

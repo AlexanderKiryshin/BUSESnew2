@@ -118,6 +118,14 @@ public class MB3_TextureBaker : MB3_MeshBakerRoot
     }
 
     [SerializeField]
+    protected int _layerTexturePackerFastMesh = -1;
+    public virtual int layerForTexturePackerFastMesh
+    {
+        get { return _layerTexturePackerFastMesh; }
+        set { _layerTexturePackerFastMesh = value; }
+    }
+
+    [SerializeField]
     protected bool _meshBakerTexturePackerForcePowerOfTwo = true;
     public bool meshBakerTexturePackerForcePowerOfTwo
     {
@@ -377,11 +385,6 @@ public class MB3_TextureBaker : MB3_MeshBakerRoot
             }
         }
 
-        for (int resMatIdx = 0; resMatIdx < resultMaterialsTexArray.Length; resMatIdx++)
-        {
-            MB_MultiMaterialTexArray textureArraySliceConfig = resultMaterialsTexArray[resMatIdx];
-        }
-
         // initialize structure to store results. For texture arrays the structure is two layers deep.
         // First layer is resultMaterial / submesh (each result material can use a different shader)
         // Second layer is a set of TextureArrays for the TextureProperties on that result material.
@@ -533,9 +536,9 @@ public class MB3_TextureBaker : MB3_MeshBakerRoot
                 mAndAs = this.OnCombinedTexturesCoroutineAtlasesAndRects;
             }
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Debug.LogError(e);
+            Debug.LogError(ex.Message + "\n" + ex.StackTrace.ToString());
         }
         finally
         {
@@ -623,6 +626,7 @@ public class MB3_TextureBaker : MB3_MeshBakerRoot
         combiner.fixOutOfBoundsUVs = _fixOutOfBoundsUVs;
         combiner.maxTilingBakeSize = _maxTilingBakeSize;
         combiner.packingAlgorithm = _packingAlgorithm;
+        combiner.layerTexturePackerFastMesh = _layerTexturePackerFastMesh;
         combiner.resultType = _resultType;
         combiner.meshBakerTexturePackerForcePowerOfTwo = _meshBakerTexturePackerForcePowerOfTwo;
         combiner.resizePowerOfTwoTextures = _resizePowerOfTwoTextures;
@@ -676,6 +680,12 @@ public class MB3_TextureBaker : MB3_MeshBakerRoot
                 }
             }
         }
+
+        if (resultMaterials.Length < 1)
+        {
+            Debug.LogError("Using multiple materials but there are no 'Source Material To Combined Mappings'. You need at least one.");
+        }
+
         HashSet<Material> allMatsInMapping = new HashSet<Material>();
         for (int i = 0; i < resultMaterials.Length; i++)
         {

@@ -82,7 +82,7 @@ public class MB_TextureCombinerRenderTexture{
 			//assett rs must be same length as textureSets;
 			System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
 			sw.Start ();
-            bool yIsFlipped = YisFlipped();
+            bool yIsFlipped = YisFlipped(LOG_LEVEL);
             for (int i = 0; i < rs.Length; i++){
 				MeshBakerMaterialTexture texInfo = textureSets[i].ts[indexOfTexSetToRender];
                 Texture2D tx = texInfo.GetTexture2D();
@@ -97,7 +97,8 @@ public class MB_TextureCombinerRenderTexture{
 			sw.Start();
 			if (LOG_LEVEL >= MB2_LogLevel.debug) Debug.Log ("Total time for Graphics.DrawTexture calls " + (sw.ElapsedMilliseconds).ToString("f5"));
 			if (LOG_LEVEL >= MB2_LogLevel.debug) Debug.Log ("Copying RenderTexture to Texture2D. destW" + _destinationTexture.width + " destH" + _destinationTexture.height );
-            //Convert the RenderTexture to a Texture2D
+			//Convert the RenderTexture to a Texture2D
+			/*
 			Texture2D tempTexture;
 			tempTexture = new Texture2D(_destinationTexture.width, _destinationTexture.height, TextureFormat.ARGB32, true);
 
@@ -148,12 +149,70 @@ public class MB_TextureCombinerRenderTexture{
             }
 			myCamera.targetTexture = null;
 			RenderTexture.active = null;
-			
+			*/
+			Texture2D tempTexture = new Texture2D(_destinationTexture.width, _destinationTexture.height, TextureFormat.ARGB32, true, false);
+			ConvertRenderTextureToTexture2D(_destinationTexture, yIsFlipped, false, LOG_LEVEL, tempTexture);
+			myCamera.targetTexture = null;
+
 			targTex = tempTexture;	
 			if (LOG_LEVEL >= MB2_LogLevel.debug) Debug.Log ("Total time to copy RenderTexture to Texture2D " + (sw.ElapsedMilliseconds).ToString("f5"));
 		}
 	}
 	
+	public static void ConvertRenderTextureToTexture2D(RenderTexture _destinationTexture, bool yIsFlipped, bool doLinearColorSpace, MB2_LogLevel LOG_LEVEL, Texture2D tempTexture)
+	{
+		RenderTexture oldRT = RenderTexture.active;
+		RenderTexture.active = _destinationTexture;
+		int xblocks = Mathf.CeilToInt(((float)_destinationTexture.width) / 512);
+		int yblocks = Mathf.CeilToInt(((float)_destinationTexture.height) / 512);
+		if (xblocks == 0 || yblocks == 0)
+		{
+			if (LOG_LEVEL >= MB2_LogLevel.trace) Debug.Log("Copying all in one shot");
+			tempTexture.ReadPixels(new Rect(0, 0, _destinationTexture.width, _destinationTexture.height), 0, 0, true);
+		}
+		else
+		{
+			if (LOG_LEVEL >= MB2_LogLevel.trace) Debug.Log("yIsFlipped copying blocks");
+			if (yIsFlipped == false)
+			{
+				for (int x = 0; x < xblocks; x++)
+				{
+					for (int y = 0; y < yblocks; y++)
+					{
+						int xx = x * 512;
+						int yy = y * 512;
+						Rect r = new Rect(xx, yy, 512, 512);
+						tempTexture.ReadPixels(r, x * 512, y * 512, true);
+					}
+				}
+			}
+			else
+			{
+				
+				for (int x = 0; x < xblocks; x++)
+				{
+					for (int y = 0; y < yblocks; y++)
+					{
+						int xx = x * 512;
+						int yy = _destinationTexture.height - 512 - y * 512;
+						Rect r = new Rect(xx, yy, 512, 512);
+						tempTexture.ReadPixels(r, x * 512, y * 512, true);
+					}
+				}
+			}
+		}
+
+		RenderTexture.active = oldRT;
+		tempTexture.Apply();
+		if (LOG_LEVEL >= MB2_LogLevel.trace && tempTexture.height <= 16 && tempTexture.width <= 16)
+		{
+			_printTexture(tempTexture);
+		}
+
+		// yield break;
+	}
+
+
     /* 
     Unity uses a non-standard format for storing normals for some platforms. Imagine the standard format is English, Unity's is French
     When the normal-map checkbox is ticked on the asset importer the normal map is translated into french. When we build the normal atlas
@@ -175,7 +234,7 @@ public class MB_TextureCombinerRenderTexture{
         return cc;
     }
 
-    public bool YisFlipped() {
+    public static bool YisFlipped(MB2_LogLevel LOG_LEVEL) {
         string graphicsDeviceVersion = SystemInfo.graphicsDeviceVersion.ToLower();
         bool flipY;
         if (!MBVersion.GraphicsUVStartsAtTop())
@@ -347,7 +406,7 @@ public class MB_TextureCombinerRenderTexture{
 		tex.wrapMode = oldTexWrapMode;
 	}
 
-    void _printTexture(Texture2D t) {
+    static void _printTexture(Texture2D t) {
         if (t.width * t.height > 100)
         {
             Debug.Log("Not printing texture too large.");
@@ -363,9 +422,9 @@ public class MB_TextureCombinerRenderTexture{
                 s += "\n";
             }
             Debug.Log(s);
-        } catch (Exception e)
+        } catch (Exception ex)
         {
-            Debug.Log("Could not print texture. texture may not be readable." + e.ToString());
+            Debug.Log("Could not print texture. texture may not be readable." + ex.Message + "\n" + ex.StackTrace.ToString());
         }
     }
 

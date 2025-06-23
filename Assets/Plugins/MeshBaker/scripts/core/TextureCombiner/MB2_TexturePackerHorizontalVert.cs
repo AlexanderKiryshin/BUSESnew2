@@ -268,7 +268,7 @@ namespace DigitalOpus.MB.Core{
 
             //normalize atlases so that that rects are 0 to 1
             for (int i = 0; i < rs.Count; i++) {
-                normalizeRects(rs[i], paddings[i]);
+                ConvertToRectsWithoutPaddingAndNormalize01(rs[i], paddings[i]);
                 rs[i].CalcUsedWidthAndHeight();
             }
             //-----------------------------
@@ -363,7 +363,7 @@ namespace DigitalOpus.MB.Core{
             //normalize atlases so that that rects are 0 to 1
             for (int i = 0; i < rs.Count; i++)
             {
-                normalizeRects(rs[i], paddings[i]);
+                ConvertToRectsWithoutPaddingAndNormalize01(rs[i], paddings[i]);
                 rs[i].CalcUsedWidthAndHeight();
             }
             //-----------------------------

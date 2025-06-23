@@ -6,6 +6,7 @@ using _scripts.Settings;
 using Random = UnityEngine.Random;
 using MirraGames.SDK;
 using Assets._scripts;
+using System.Collections;
 
 public class BusGenerator : MonoBehaviour
 {
@@ -19,7 +20,6 @@ public class BusGenerator : MonoBehaviour
     [SerializeField] private int[] _rotations;
     [SerializeField] private float _stepSize;
     [SerializeField] private bool _adjustRandomRotation;
-    [SerializeField] private int _randomRotaionParameter;
     [SerializeField] private bool _generateOnStart = false;
     public Bus smallBusPrefab;
     public Vector3 SmallBusSize;
@@ -64,9 +64,18 @@ public class BusGenerator : MonoBehaviour
             Generate();
         }
 
-        _busInitializer.Initialize();
+        StartCoroutine(WaitMirra());
        
     }
+
+    public IEnumerator WaitMirra()
+    {
+        yield return new WaitUntil(() => MirraSDK.IsInitialized);
+        _busInitializer.Initialize();
+    }
+    
+
+    
 
     public void Generate()
     {
@@ -439,5 +448,11 @@ public class BusGenerator : MonoBehaviour
         if(_busData != null)
             _busLoader.LoadBusData(_busData);
     }
-    
+
+    public void SaveBusData()
+    {
+        if (_busData != null)
+            _busLoader.SaveBusData(_busData);
+    }
+
 }

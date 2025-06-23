@@ -39,10 +39,11 @@ namespace DigitalOpus.MB.Core
             public bool allTexturesAreNull;
             public bool allTexturesAreSame;
             public bool allNonTexturePropsAreSame;
+            public bool allSrcMatsOmittedTextureProperty;
 
             public override string ToString()
             {
-                return String.Format("AllTexturesNull={0} areSame={1} nonTexPropsAreSame={2}", allTexturesAreNull, allTexturesAreSame, allNonTexturePropsAreSame);
+                return String.Format("AllTexturesNull={0} areSame={1} nonTexPropsAreSame={2} allSrcMatsOmittedTextureProperty={3}", allTexturesAreNull, allTexturesAreSame, allNonTexturePropsAreSame, allSrcMatsOmittedTextureProperty);
             }
         }
 
@@ -97,11 +98,13 @@ namespace DigitalOpus.MB.Core
             internal int _maxTilingBakeSize = 1024;
             internal bool _saveAtlasesAsAssets = false;
             internal MB2_PackingAlgorithmEnum _packingAlgorithm = MB2_PackingAlgorithmEnum.UnitysPackTextures;
+            internal int _layerTexturePackerFastV2 = -1;
             internal bool _meshBakerTexturePackerForcePowerOfTwo = true;
             internal List<ShaderTextureProperty> _customShaderPropNames = new List<ShaderTextureProperty>();
             internal bool _normalizeTexelDensity = false;
             internal bool _considerNonTextureProperties = false;
             internal bool doMergeDistinctMaterialTexturesThatWouldExceedAtlasSize = false;
+            internal ColorSpace colorSpace = ColorSpace.Gamma;
             internal MB3_TextureCombinerNonTextureProperties nonTexturePropertyBlender;
             internal List<MB_TexSet> distinctMaterialTextures;
             internal List<GameObject> allObjsToMesh;
@@ -159,6 +162,11 @@ namespace DigitalOpus.MB.Core
             }
         }
 
+        internal static bool _DoAnySrcMatsHaveProperty(int propertyIndex, CreateAtlasForProperty[] allTexturesAreNullAndSameColor)
+        {
+            return !allTexturesAreNullAndSameColor[propertyIndex].allSrcMatsOmittedTextureProperty;
+        }
+
         internal static bool _CollectPropertyNames(MB3_TextureCombinerPipeline.TexturePipelineData data, MB2_LogLevel LOG_LEVEL)
         {
             return _CollectPropertyNames(data.texPropertyNames, data._customShaderPropNames,
@@ -186,33 +194,6 @@ namespace DigitalOpus.MB.Core
 
             MBVersion.CollectPropertyNames(texPropertyNames, shaderTexPropertyNames, _customShaderPropNames, resultMaterial, LOG_LEVEL);
             return true;
-        }
-
-        private static bool _ShouldWeCreateAtlasForThisProperty(int propertyIndex, CreateAtlasForProperty[] allTexturesAreNullAndSameColor, TexturePipelineData data)
-        {
-            CreateAtlasForProperty v = allTexturesAreNullAndSameColor[propertyIndex];
-            if (data._considerNonTextureProperties)
-            {
-                if (!v.allNonTexturePropsAreSame || !v.allTexturesAreNull)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                if (!v.allTexturesAreNull)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
         }
 
         /// <summary>
@@ -388,9 +369,11 @@ namespace DigitalOpus.MB.Core
                                     else
                                     {
                                         //TRIED to copy texture using tex2.SetPixels(tex1.GetPixels()) but bug in 3.5 means DTX1 and 5 compressed textures come out skewe
-                                        if (Application.isPlaying && data._packingAlgorithm != MB2_PackingAlgorithmEnum.MeshBakerTexturePacker_Fast)
+                                        if (Application.isPlaying && 
+                                            data._packingAlgorithm != MB2_PackingAlgorithmEnum.MeshBakerTexturePacker_Fast &&
+                                            data._packingAlgorithm != MB2_PackingAlgorithmEnum.MeshBakerTexturePaker_Fast_V2_Beta)
                                         {
-                                            Debug.LogWarning("Object " + obj.name + " in the list of objects to mesh uses Texture " + tx.name + " uses format " + f + " that is not in: ARGB32, RGBA32, BGRA32, RGB24, Alpha8 or DXT. These textures cannot be resized at runtime. Try changing texture format. If format says 'compressed' try changing it to 'truecolor'");
+                                            Debug.LogError("Object " + obj.name + " in the list of objects to mesh uses Texture " + tx.name + " uses format " + f + " that is not in: ARGB32, RGBA32, BGRA32, RGB24, Alpha8 or DXT. These textures cannot be resized at runtime. Try changing texture format. If format says 'compressed' try changing it to 'truecolor'");
                                             result.success = false;
                                             yield break;
                                         }
@@ -414,7 +397,7 @@ namespace DigitalOpus.MB.Core
                                 */
                                 else
                                 {
-                                    Debug.LogError("Object " + obj.name + " in the list of objects to mesh uses a Texture that is not a Texture2D. Cannot build atlases.");
+                                    Debug.LogError("Object '" + obj.name + "' in the list of objects to mesh uses a Texture that is not a Texture2D. Cannot build atlases with this object.");
                                     result.success = false;
                                     yield break;
                                 }
@@ -485,7 +468,7 @@ namespace DigitalOpus.MB.Core
                 string[] filterStrings = new string[data.allowedMaterialsFilter.Count];
                 for (int i = 0; i < filterStrings.Length; i++) filterStrings[i] = data.allowedMaterialsFilter[i].name;
                 string allowedMaterialsString = string.Join(", ", filterStrings);
-                Debug.LogError("None of the source object materials matched any of the allowed materials for submesh with result material: " + data.resultMaterial + " allowedMaterials: " + allowedMaterialsString);
+                Debug.LogError("None of the materials on the objects to combine matched any of the allowed materials for submesh with result material: " + data.resultMaterial + " allowedMaterials: " + allowedMaterialsString + ". Do any of the source objects use the allowed materials?");
                 result.success = false;
                 yield break;
             }
@@ -538,29 +521,37 @@ namespace DigitalOpus.MB.Core
                 int numTexturesExisting = 0;
                 int numTexturesMatchinFirst = 0;
                 int numNonTexturePropertiesMatchingFirst = 0;
+                bool allSrcMatsOmittedTexProp = true;
                 for (int j = 0; j < data.distinctMaterialTextures.Count; j++)
                 {
-                    if (!data.distinctMaterialTextures[j].ts[propIdx].isNull)
+                    MB_TexSet matTex = data.distinctMaterialTextures[j];
+                    if (!matTex.ts[propIdx].isNull)
                     {
                         numTexturesExisting++;
                     }
-                    if (firstTexture.AreTexturesEqual(data.distinctMaterialTextures[j].ts[propIdx]))
+                    if (firstTexture.AreTexturesEqual(matTex.ts[propIdx]))
                     {
                         numTexturesMatchinFirst++;
                     }
                     if (data._considerNonTextureProperties)
                     {
-                        Color colJ = data.nonTexturePropertyBlender.GetColorAsItWouldAppearInAtlasIfNoTexture(data.distinctMaterialTextures[j].matsAndGOs.mats[0].mat, data.texPropertyNames[propIdx]);
+                        Color colJ = data.nonTexturePropertyBlender.GetColorAsItWouldAppearInAtlasIfNoTexture(matTex.matsAndGOs.mats[0].mat, data.texPropertyNames[propIdx]);
                         if (colJ == firstColor)
                         {
                             numNonTexturePropertiesMatchingFirst++;
                         }
                     }
 
+                    for (int srcMatIdx = 0; srcMatIdx < matTex.matsAndGOs.mats.Count; srcMatIdx++)
+                    {
+                        allSrcMatsOmittedTexProp = !matTex.matsAndGOs.mats[srcMatIdx].mat.HasProperty(data.texPropertyNames[propIdx].name);
+                    }
                 }
+
                 shouldWeCreateAtlasForProp[propIdx].allTexturesAreNull = numTexturesExisting == 0;
                 shouldWeCreateAtlasForProp[propIdx].allTexturesAreSame = numTexturesMatchinFirst == data.distinctMaterialTextures.Count;
                 shouldWeCreateAtlasForProp[propIdx].allNonTexturePropsAreSame = numNonTexturePropertiesMatchingFirst == data.distinctMaterialTextures.Count;
+                shouldWeCreateAtlasForProp[propIdx].allSrcMatsOmittedTextureProperty |= allSrcMatsOmittedTexProp;
                 if (LOG_LEVEL >= MB2_LogLevel.trace) Debug.Log(String.Format("AllTexturesAreNullAndSameColor prop: {0} createAtlas:{1}  val:{2}", data.texPropertyNames[propIdx].name, MB3_TextureCombinerPipeline._ShouldWeCreateAtlasForThisProperty(propIdx, data._considerNonTextureProperties, shouldWeCreateAtlasForProp), shouldWeCreateAtlasForProp[propIdx]));
             }
             return shouldWeCreateAtlasForProp;
@@ -581,6 +572,60 @@ namespace DigitalOpus.MB.Core
 
             MeshBakerMaterialTexture.readyToBuildAtlases = true;
             data.allTexturesAreNullAndSameColor = CalculateAllTexturesAreNullAndSameColor(data, LOG_LEVEL);
+
+            if (MB3_MeshCombiner.EVAL_VERSION)
+            {
+                List<int> propIdxsGeneratingAtlasesFor = new List<int>();
+                // Prioritize albedo and bump if those props are used.
+                for (int i = 0; i < data.allTexturesAreNullAndSameColor.Length; i++)
+                {
+                    if (_ShouldWeCreateAtlasForThisProperty(i, data._considerNonTextureProperties, data.allTexturesAreNullAndSameColor))
+                    {
+                        if (data.texPropertyNames[i].name.Equals("_Albedo") ||
+                            data.texPropertyNames[i].name.Equals("_MainTex") ||
+                            data.texPropertyNames[i].name.Equals("_BaseMap") ||
+                            data.texPropertyNames[i].name.Equals("_BaseColorMap"))
+                        {
+                            if (propIdxsGeneratingAtlasesFor.Count < 2) propIdxsGeneratingAtlasesFor.Add(i);
+                        }
+
+                        if (data.texPropertyNames[i].name.Equals("_BumpMap") ||
+                            data.texPropertyNames[i].name.Equals("_Normal") ||
+                            data.texPropertyNames[i].name.Equals("_NormalMap") ||
+                            data.texPropertyNames[i].name.Equals("_BentNormalMap"))
+                        {
+                            if (propIdxsGeneratingAtlasesFor.Count < 2) propIdxsGeneratingAtlasesFor.Add(i);
+                        }
+                    }
+                }
+
+                List<string> namesTruncated = new List<string>();
+                List<int> propIdxsTruncated = new List<int>();
+                for (int i = 0; i < data.allTexturesAreNullAndSameColor.Length; i++)
+                {
+                    if (_ShouldWeCreateAtlasForThisProperty(i, data._considerNonTextureProperties, data.allTexturesAreNullAndSameColor))
+                    {
+                        if (propIdxsGeneratingAtlasesFor.Count >= 2 && !propIdxsGeneratingAtlasesFor.Contains(i))
+                        {
+                            namesTruncated.Add(data.texPropertyNames[i].name);
+                            propIdxsTruncated.Add(i);
+                        }
+                    }
+                }
+
+                for (int i = 0; i < propIdxsTruncated.Count; i++)
+                {
+                    data.allTexturesAreNullAndSameColor[propIdxsTruncated[i]].allTexturesAreNull = true;
+                    data.allTexturesAreNullAndSameColor[propIdxsTruncated[i]].allTexturesAreSame = true;
+                    data.allTexturesAreNullAndSameColor[propIdxsTruncated[i]].allNonTexturePropsAreSame = true;
+                }
+
+                if (namesTruncated.Count > 0)
+                {
+                    Debug.LogError("The free version of Mesh Baker will generate a maximum of two atlases per combined material. The source materials had more than two properties with textures. " +
+                        "Atlases will not be generated for: " + string.Join(",", namesTruncated.ToArray()));
+                }
+            }
 
             //calculate size of rectangles in atlas
             int _padding = data._atlasPadding;
@@ -719,9 +764,17 @@ namespace DigitalOpus.MB.Core
             {
                 return new MB3_TextureCombinerPackerMeshBaker();
             }
-            else
+            else if (packingAlgorithm == MB2_PackingAlgorithmEnum.MeshBakerTexturePaker_Fast_V2_Beta)
+            {
+                return new MB3_TextureCombinerPackerMeshBakerFastV2();
+            }
+            else if (packingAlgorithm == MB2_PackingAlgorithmEnum.MeshBakerTexturePacker_Fast)
             {
                 return new MB3_TextureCombinerPackerMeshBakerFast();
+            } else
+            {
+                Debug.LogError("Unknown texture packer type. " + packingAlgorithm + " This should never happen.");
+                return null;
             }
         }
 
@@ -947,6 +1000,10 @@ namespace DigitalOpus.MB.Core
                 return new MB2_TexturePackerRegular();
             }
             else if (_packingAlgorithm == MB2_PackingAlgorithmEnum.MeshBakerTexturePacker_Fast)
+            {
+                return new MB2_TexturePackerRegular();
+            }
+            else if (_packingAlgorithm == MB2_PackingAlgorithmEnum.MeshBakerTexturePaker_Fast_V2_Beta)
             {
                 return new MB2_TexturePackerRegular();
             }

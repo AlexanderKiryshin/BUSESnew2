@@ -18,12 +18,23 @@ public class MB3_MeshBakerGrouper : MonoBehaviour, MB_IMeshBakerSettingsHolder
         agglomerative,
     }
 
+    public static readonly Color WHITE_TRANSP = new Color(1f,1f,1f,.1f);
+
     public MB3_MeshBakerGrouperCore grouper;
     public ClusterType clusterType = ClusterType.none;
+
+    /// <summary>
+    /// Baked meshes will be added as a child of this scene object.
+    /// </summary>
+    public Transform parentSceneObject;
     public GrouperData data = new GrouperData();
 
     //these are for getting a resonable bounds in which to draw gizmos.
     [HideInInspector] public Bounds sourceObjectBounds = new Bounds(Vector3.zero, Vector3.one);
+    
+    public string prefabOptions_outputFolder = "";
+    public bool prefabOptions_autoGeneratePrefabs;
+    public bool prefabOptions_mergeOutputIntoSinglePrefab;
 
     public MB3_MeshCombinerSettings meshBakerSettingsAsset;
     public MB3_MeshCombinerSettingsData meshBakerSettings;
@@ -137,8 +148,18 @@ namespace DigitalOpus.MB.Core
         public GrouperData d;
         public abstract Dictionary<string, List<Renderer>> FilterIntoGroups(List<GameObject> selection);
         public abstract void DrawGizmos(Bounds sourceObjectBounds);
-        public void DoClustering(MB3_TextureBaker tb, MB3_MeshBakerGrouper grouper)
+        public List<MB3_MeshBakerCommon> DoClustering(MB3_TextureBaker tb, MB3_MeshBakerGrouper grouper)
         {
+            List<MB3_MeshBakerCommon> outBakers = new List<MB3_MeshBakerCommon>();
+            if (grouper.prefabOptions_autoGeneratePrefabs || grouper.prefabOptions_mergeOutputIntoSinglePrefab)
+            {
+                if (Application.isPlaying)
+                {
+                    Debug.LogError("Cannot generate prefabs while playing. Prefabs can only be generated in the editor and not in play mode.");
+                    return outBakers;
+                }
+            }
+
             //todo warn for no objects and no Texture Bake Result
             Dictionary<string, List<Renderer>> cell2objs = FilterIntoGroups(tb.GetObjectsToCombine());
 
@@ -209,20 +230,23 @@ namespace DigitalOpus.MB.Core
                 }
                 cell2objs = cell2objsNew;
             }
+
             int clustersWithOnlyOneRenderer = 0;
             foreach (string key in cell2objs.Keys)
             {
                 List<Renderer> gaws = cell2objs[key];
                 if (gaws.Count > 1 || grouper.data.includeCellsWithOnlyOneRenderer)
                 {
-                    AddMeshBaker(grouper, tb, key, gaws);
+                    outBakers.Add(AddMeshBaker(grouper, tb, key, gaws));
                 }
                 else
                 {
                     clustersWithOnlyOneRenderer++;
                 }
             }
+
             Debug.Log(String.Format("Found {0} cells with Renderers. Not creating bakers for {1} because there is only one mesh in the cell. Creating {2} bakers.", cell2objs.Count, clustersWithOnlyOneRenderer, cell2objs.Count - clustersWithOnlyOneRenderer));
+            return outBakers;
         }
 
         Dictionary<int, List<Renderer>> GroupByLightmapIndex(List<Renderer> gaws)
@@ -245,7 +269,7 @@ namespace DigitalOpus.MB.Core
             return idx2objs;
         }
 
-        void AddMeshBaker(MB3_MeshBakerGrouper grouper, MB3_TextureBaker tb, string key, List<Renderer> gaws)
+        MB3_MeshBakerCommon AddMeshBaker(MB3_MeshBakerGrouper grouper, MB3_TextureBaker tb, string key, List<Renderer> gaws)
         {
             int numVerts = 0;
             for (int i = 0; i < gaws.Count; i++)
@@ -276,6 +300,8 @@ namespace DigitalOpus.MB.Core
             {
                 newMeshBaker.GetObjectsToCombine().Add(gaws[i].gameObject);
             }
+
+            return newMeshBaker;
         }
     }
 
@@ -372,6 +398,7 @@ namespace DigitalOpus.MB.Core
         {
             Vector3 cs = d.cellSize;
             if (cs.x <= .00001f || cs.y <= .00001f || cs.z <= .00001f) return;
+            Gizmos.color = MB3_MeshBakerGrouper.WHITE_TRANSP;
             Vector3 p = sourceObjectBounds.center - sourceObjectBounds.extents;
             Vector3 offset = d.origin;
             offset.x = offset.x % cs.x;
@@ -503,8 +530,11 @@ namespace DigitalOpus.MB.Core
 
         public override void DrawGizmos(Bounds sourceObjectBounds)
         {
+            
             if (d.pieAxis.magnitude < .1f) return;
             if (d.pieNumSegments < 1) return;
+
+            Gizmos.color = MB3_MeshBakerGrouper.WHITE_TRANSP;
             float rad = sourceObjectBounds.extents.magnitude;
 
             int numRings = Mathf.CeilToInt(rad / d.ringSpacing);
@@ -513,8 +543,7 @@ namespace DigitalOpus.MB.Core
             {
                 DrawCircle(d.pieAxis.normalized, d.origin, d.ringSpacing * (i + 1), 24);
             }
-
-            Gizmos.color = Color.white;
+            
             Quaternion yIsUp2PieAxis = Quaternion.FromToRotation(Vector3.up, d.pieAxis);
             Quaternion rStep = Quaternion.AngleAxis(180f / d.pieNumSegments, Vector3.up);
             Vector3 r = Vector3.forward;
@@ -569,7 +598,7 @@ namespace DigitalOpus.MB.Core
             for (int i = 0; i < subdiv + 1; i++)
             {
                 Vector3 r2 = q * r;
-                Gizmos.color = Color.white;
+                Gizmos.color = MB3_MeshBakerGrouper.WHITE_TRANSP;
                 Gizmos.DrawLine(center + r, center + r2);
                 r = r2;
             }
@@ -632,6 +661,7 @@ namespace DigitalOpus.MB.Core
 
         public override void DrawGizmos(Bounds sceneObjectBounds)
         {
+            Gizmos.color = MB3_MeshBakerGrouper.WHITE_TRANSP;
             if (clusterCenters != null && clusterSizes != null && clusterCenters.Length == clusterSizes.Length)
             {
                 for (int i = 0; i < clusterSizes.Length; i++)
@@ -795,9 +825,11 @@ namespace DigitalOpus.MB.Core
                 _BuildListOfClustersToDraw(null, out s, out l);
                 _lastMaxDistBetweenClusters = d.maxDistBetweenClusters;
             }
+
+            Gizmos.color = MB3_MeshBakerGrouper.WHITE_TRANSP;
             for (int i = 0; i < _clustersToDraw.Count; i++)
             {
-                Gizmos.color = Color.white;
+                Gizmos.color = MB3_MeshBakerGrouper.WHITE_TRANSP;
                 MB3_AgglomerativeClustering.ClusterNode node = _clustersToDraw[i];
                 Gizmos.DrawWireSphere(node.centroid, _radii[i]);
             }

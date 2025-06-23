@@ -68,21 +68,22 @@ public class UiManager : MonoBehaviour
     [SerializeField] public Button vipChoiseBtn;
     [SerializeField] private Button _vipBuyBtn, _vipByAdBtn;
     [SerializeField] private Button _turboByAdBtn, _turboBuyBtn;
+    [SerializeField] private TextMeshProUGUI _continueadText;
     public event Action OnContinueBtnClicked;
     public event Action OnOpenSpotBtnAdClicked;
     public event Action OnDoubleRewardBtnAdClicked;
     public event Action OnCompleteBtnClicked;
     public event Action OnCloseContinerBtnClicked;
     private Coroutine _coroutine;
+    public static Action OnArrangeUsed;
+    public static Action OnVipUsed;
+    public static Action OnJungleUsed;
+    public static Action OnTurboUsed;
 
     private void Awake()
     {
         LocalizationManager.Instance.onLanguageChange += OnLanguageChange;
         _coinManager.OnCoinsChanged += OnCoinsChanged;
-        if (MirraSDK.Data.HasKey("no_ads"))
-        {
-            _noAdsBtn.gameObject.SetActive(false);
-        }
     }
 
     private void Start()
@@ -121,7 +122,7 @@ public class UiManager : MonoBehaviour
         _continueByAdBtn.onClick.AddListener(ContinueByAdBtnClicked);
 
         _noAdsBtn.onClick.AddListener(NoAds);
-        _closeAdsBtn.onClick.AddListener(NoAdsDisable);
+       // _closeAdsBtn.onClick.AddListener(NoAdsDisable);
         RewardedShop.OnNoAdsBuy += OnBuyNoAds;
     }
 
@@ -164,7 +165,7 @@ public class UiManager : MonoBehaviour
         _continueByAdBtn.onClick.RemoveListener(ContinueByAdBtnClicked);
 
         _noAdsBtn.onClick.RemoveListener(NoAds);
-        _closeAdsBtn.onClick.RemoveListener(NoAdsDisable);
+        //_closeAdsBtn.onClick.RemoveListener(NoAdsDisable);
         RewardedShop.OnNoAdsBuy -= OnBuyNoAds;
     }
 
@@ -307,7 +308,7 @@ public class UiManager : MonoBehaviour
 
     private void OnWinGame()
     {
-        Analytic.LevelCompleted(MirraSDK.Data.GetInt("Level").ToString());
+        Analytic.LevelCompleted(MirraSDK.Data.GetInt("Level"));
         _completed.gameObject.SetActive(true);
         AdManager.instance.OnWindowEnabled(true);
     }
@@ -331,7 +332,7 @@ public class UiManager : MonoBehaviour
         {
             AdManager.instance.ShowInterstitial();
         }*/
-        Analytic.LevelStarted(MirraSDK.Data.GetInt("Level").ToString());
+        Analytic.LevelStarted(MirraSDK.Data.GetInt("Level"));
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         AdManager.instance.OnWindowEnabled(false);
     }
@@ -475,9 +476,25 @@ public class UiManager : MonoBehaviour
         }
     }
 
+    public void ArrangeRewardedWithCheck() 
+    {
+        if (ParkingManager.instance.BusesInSpot.Count > 0)
+        {
+            if (MirraSDK.Data.HasKey("level"))
+            Analytic.BonusUsed(MirraSDK.Data.GetInt("Level").ToString(), "arrange");
+            _followPath.ReorderPersonsAccordingBusInSpot();
+            OnArrangeUsed?.Invoke();
+        }
+        else
+        {
+            NoBuses();
+        }
+    }
+
     private void ArrangeRewarded()
     {
-        Analytic.BonusUsed(MirraSDK.Data.GetInt("Level").ToString(), "arrange");
+        if (MirraSDK.Data.HasKey("level"))
+            Analytic.BonusUsed(MirraSDK.Data.GetInt("Level").ToString(), "arrange");
         _followPath.ReorderPersonsAccordingBusInSpot();
         _arrangeRect.gameObject.SetActive(false);
     }
@@ -504,11 +521,13 @@ public class UiManager : MonoBehaviour
             AdManager.instance.StartRewarded(MirraSDK.Data.GetInt("Level").ToString(), "jumble", JumbleRewarded, AdNotAvailible);
     }
 
-    private void JumbleRewarded()
+    public void JumbleRewarded()
     {
-        Analytic.BonusUsed(MirraSDK.Data.GetInt("Level").ToString(), "jumble");
+        if (MirraSDK.Data.HasKey("level"))
+            Analytic.BonusUsed(MirraSDK.Data.GetInt("Level").ToString(), "jumble");
         _busGenerator.ChangeBusColors();
         _jumbleRect.gameObject.SetActive(false);
+        OnJungleUsed?.Invoke();
     }
 
     private void CarParkingByAdBtnClicked()
@@ -569,10 +588,24 @@ public class UiManager : MonoBehaviour
             VipSlotNotAvailible();
         }
     }
-
+    public void VipRewardedWithCheck()
+    {
+        if (!_parkingManager.IsBusInVipSpot)
+        {
+            if (MirraSDK.Data.HasKey("level"))
+                Analytic.BonusUsed(MirraSDK.Data.GetInt("Level").ToString(), "vip");
+            _heliSystem.StartVipChoise();
+            OnVipUsed?.Invoke();
+        }
+        else
+        {
+            VipSlotNotAvailible();
+        }
+    }
     private void VipRewarded()
     {
-        Analytic.BonusUsed(MirraSDK.Data.GetInt("Level").ToString(), "vip");
+        if (MirraSDK.Data.HasKey("level"))
+            Analytic.BonusUsed(MirraSDK.Data.GetInt("Level").ToString(), "vip");
         _heliSystem.StartVipChoise();
         _vipWindow.gameObject.SetActive(false);
     }
@@ -603,9 +636,22 @@ public class UiManager : MonoBehaviour
         }
     }
 
+    public void TurboRewardedWithCheck()
+    {
+        if (!_turboTimer.IsTimerActive)
+        {
+            if (MirraSDK.Data.HasKey("level"))
+                Analytic.BonusUsed(MirraSDK.Data.GetInt("Level").ToString(), "turbo");
+            _turboTimer.StartTurbo();
+            _turboWindow.gameObject.SetActive(false);
+            OnTurboUsed?.Invoke();
+        }
+    }
+
     private void TurboRewarded()
     {
-        Analytic.BonusUsed(MirraSDK.Data.GetInt("Level").ToString(), "turbo");
+        if (MirraSDK.Data.HasKey("level"))
+            Analytic.BonusUsed(MirraSDK.Data.GetInt("Level").ToString(), "turbo");
         _turboTimer.StartTurbo();
         _turboWindow.gameObject.SetActive(false);
     }

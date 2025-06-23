@@ -41,8 +41,32 @@ namespace DigitalOpus.MB.Core
             Cutout = 1,
             Fade = 2,
             Transparent = 3,
-
         }
+
+        public enum URPBlendMode // called SurfaceType in URP
+        {
+            Opaque = 0,
+            Transparent = 1
+        }
+
+        public enum HDRPBlendMode // called SurfaceType in HDRP
+        {
+            Opaque = 0,
+            Transparent = 1
+        }
+
+        public int[] URPBlendMode_2_StandardBlendMode = new int[]
+        {
+            (int) StandardShaderBlendMode.Opaque, 
+            (int) StandardShaderBlendMode.Transparent
+        };
+
+        public int[] HDRPBlendMode_2_StandardBlendMode = new int[]
+        {
+            (int) StandardShaderBlendMode.Opaque,
+            (int) StandardShaderBlendMode.Transparent
+        };
+
 
         public GameObject go;
         public string shaderName = "";
@@ -122,6 +146,26 @@ namespace DigitalOpus.MB.Core
                 if (materials[i].shader.name.StartsWith("Standard") && materials[i].HasProperty("_Mode"))
                 {
                     standardShaderBlendModes[i] = (StandardShaderBlendMode)materials[i].GetFloat("_Mode");
+                } else if (materials[i].shader.name.StartsWith("Universal Render Pipeline") && materials[i].HasProperty("_Surface"))
+                {
+                    int surfaceMode = (int) materials[i].GetFloat("_Surface");
+                    if (surfaceMode < 0 || surfaceMode > (int) URPBlendMode.Transparent)
+                    {
+                        Debug.LogError("Unsupported surface mode, were more surface modes added to the URP?");
+                        surfaceMode = Mathf.Clamp(surfaceMode, (int)URPBlendMode.Opaque, (int)URPBlendMode.Transparent);
+                    }
+
+                    standardShaderBlendModes[i] = (StandardShaderBlendMode) URPBlendMode_2_StandardBlendMode[surfaceMode];
+                } else if (materials[i].shader.name.StartsWith("HDRP") && materials[i].HasProperty("_SurfaceType"))
+                {
+                    int surfaceMode = (int)materials[i].GetFloat("_SurfaceType");
+                    if (surfaceMode < 0 || surfaceMode > (int)HDRPBlendMode.Transparent)
+                    {
+                        Debug.LogError("Unsupported surface mode, were more surface modes added to the HDRP?");
+                        surfaceMode = Mathf.Clamp(surfaceMode, (int)HDRPBlendMode.Opaque, (int)HDRPBlendMode.Transparent);
+                    }
+
+                    standardShaderBlendModes[i] = (StandardShaderBlendMode)URPBlendMode_2_StandardBlendMode[surfaceMode];
                 }
                 else
                 {
@@ -131,6 +175,7 @@ namespace DigitalOpus.MB.Core
                 materialName += (materials[i] == null ? "null" : materials[i].name);
                 if (i < materials.Length - 1) materialName += ",";
             }
+
             standardShaderBlendModesName = "";
             standardShaderBlendModesNameSet.Sort();
             foreach (string modeName in standardShaderBlendModesNameSet)

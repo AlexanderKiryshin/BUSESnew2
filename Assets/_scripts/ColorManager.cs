@@ -16,7 +16,6 @@ public enum Difficulty
 [SelectionBase]
 public class ColorManager : MonoBehaviour
 {
-    [SerializeField] private Material _hidedBusMaterial;
     [SerializeField] private FollowPath _followPath;
     [SerializeField] private LevelCollection _levelCollection;
     [SerializeField] private LevelLoader _levelLoader;
@@ -55,42 +54,28 @@ public class ColorManager : MonoBehaviour
         {
             case Difficulty.Easy:
                 ColorSequencePerson = GenerateColorSequenceForPeopleEase(BusSequence, _randomDelimeter);
+                Debug.Log("ColorSequencePerson count: " + ColorSequencePerson.Count);
                 break;
             case Difficulty.Hard:
                 ColorSequencePerson = GenerateColorSequenceForPeopleHard(BusSequence, _randomDelimeter);
+                Debug.Log("ColorSequencePerson count: " + ColorSequencePerson.Count);
                 break;
         }
 
         _followPath.Initialize();
-        AssignHidedBuses();
+        //AssignHidedBuses();
     }
 
-    private void AssignHidedBuses()
+    public Material GetPeopleColor(ColorType color)
     {
-        if (_levelLoader.Level >= 8 )
+        foreach (var col in GeneratedColors)
         {
-            int randomCount = Random.Range(3, 7);
-            for (int i = 0; i < randomCount; i++)
+            if (col.colorType == color)
             {
-                int index = Random.Range(0, 2);
-                if (index == 0)
-                {
-                    if (_busGenerator.BusesInFirstArea.Count > 0)
-                    {
-                        int randomindex = Random.Range(0, _busGenerator.BusesInFirstArea.Count-1);
-                        _busGenerator.BusesInFirstArea[randomindex].HideBus(_hidedBusMaterial);
-                    }
-                }
-                else
-                {
-                    if (_busGenerator.BusesInSecondArea.Count > 0)
-                    {
-                        int randomindex = Random.Range(0, _busGenerator.BusesInSecondArea.Count-1);
-                        _busGenerator.BusesInSecondArea[randomindex].HideBus(_hidedBusMaterial);
-                    }
-                }
+                return col.peopleColor;
             }
         }
+        return null;
     }
 
     private List<Material> GetZoneColors(List<Material> allColors, List<Material> excludedColors, int mixPercentage)
@@ -176,7 +161,7 @@ public class ColorManager : MonoBehaviour
         if (buses.Count < 2 || randomDelimeter <= 0)
             return colorSequence;
 
-        for (int j = 0; j < buses.Count - 1; j++)
+        for (int j = 0; j < buses.Count; j++)
         {
             var currentBus = buses[j];
 
@@ -268,20 +253,20 @@ public class ColorManager : MonoBehaviour
             }
             else
             {
-                for (int i = 0; i < buses[i].Capacity; i++)
+                for (int i = 0; i < buses[j].Capacity; i++)
                 {
-                    var color = GeneratedColors.Where(color => color.GetColor(buses[i].Type) == buses[i].Color).First<ColorData>();
-                    colorSequence.Add((new ColorData(color.colorType, buses[i].Type, buses[i].Color, color.peopleColor)));
+                    var color = GeneratedColors.Where(color => color.GetColor(buses[j].Type) == buses[j].Color).First<ColorData>();
+                    colorSequence.Add((new ColorData(color.colorType, buses[j].Type, buses[j].Color, color.peopleColor)));
                 }
             }
         }
 
-        var lastBus = buses[^1];
+       /* var lastBus = buses[^1];
         for (int i = 0; i < lastBus.Capacity; i++)
         {
             var color = GeneratedColors.Where(color => color.GetColor(lastBus.Type) == lastBus.Color).First<ColorData>();
             colorSequence.Add(new ColorData(color.colorType, lastBus.Type, lastBus.Color, color.peopleColor));
-        }
+        }*/
 
         return colorSequence;
     }
@@ -293,7 +278,7 @@ public class ColorManager : MonoBehaviour
         if (buses.Count < 2 || randomDelimeter <= 0)
             return colorSequence;
 
-        for (int j = 0; j < buses.Count - 1; j++)
+        for (int j = 0; j < buses.Count; j++)
         {
             var currentBus = buses[j];
             if (j == 0)
@@ -341,20 +326,20 @@ public class ColorManager : MonoBehaviour
             }
             else
             {
-                for (int i = 0; i < buses[i].Capacity; i++)
+                for (int i = 0; i < buses[j].Capacity; i++)
                 {
-                    var color = GeneratedColors.Where(color => color.GetColor(buses[i].Type) == buses[i].Color).First<ColorData>();
-                    colorSequence.Add(new ColorData(color.colorType,buses[i].Type, buses[i].Color, color.peopleColor));
+                    var color = GeneratedColors.Where(color => color.GetColor(buses[j].Type) == buses[j].Color).First<ColorData>();
+                    colorSequence.Add(new ColorData(color.colorType,buses[j].Type, buses[j].Color, color.peopleColor));
                 }
             }
         }
 
-        var lastBus = buses[^1];
+        /*var lastBus = buses[^1];
         for (int i = 0; i < lastBus.Capacity; i++)
         {
             var color = GeneratedColors.Where(color => color.GetColor(lastBus.Type) == lastBus.Color).First<ColorData>();
             colorSequence.Add(new ColorData(color.colorType,lastBus.Type, lastBus.Color, color.peopleColor));
-        }
+        }*/
 
         return colorSequence;
     }

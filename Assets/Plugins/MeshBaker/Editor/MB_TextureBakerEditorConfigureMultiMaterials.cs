@@ -44,6 +44,7 @@ namespace DigitalOpus.MB.MBEditor
                 if (tbEditor.resultMaterials.arraySize == 0)
                 {
                     momm.resultMaterials = new MB_MultiMaterial[1];
+                    momm.resultMaterials[0] = new MB_MultiMaterial();
                     momm.resultMaterials[0].considerMeshUVs = momm.fixOutOfBoundsUVs;
                 }
                 else

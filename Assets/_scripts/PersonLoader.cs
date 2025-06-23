@@ -23,7 +23,7 @@ public class PersonLoader : MonoBehaviour
                 if (bus.PersonsInside == bus.Capacity)
                 {
                     if (_coroutine == null)
-                        _coroutine = StartCoroutine(CallFreeSpotWithDelay(bus, 0.4f));
+                        _coroutine = StartCoroutine(CallFreeSpotWithDelay(bus, 0.7f));
                     break;
                 }
 

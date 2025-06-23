@@ -150,7 +150,12 @@ public class Bus : MonoBehaviour, IRaycastTarget
         rotation.y += 90;
         gameObject.transform.eulerAngles = rotation;
     }
-    
+    public void Rotate45()
+    {
+        Vector3 rotation = gameObject.transform.eulerAngles;
+        rotation.y += 45;
+        gameObject.transform.eulerAngles = rotation;
+    }
 
     public void TakePerson(Person person)
     {
@@ -160,7 +165,7 @@ public class Bus : MonoBehaviour, IRaycastTarget
 
     public void LeaveParking(List<Vector3> path)
     {
-        _fogEffect.SetActive(true);
+        //_fogEffect.SetActive(true);
         _isGoAway = true;
         _navAgent.enabled = true;
         int score = 0;
@@ -176,6 +181,11 @@ public class Bus : MonoBehaviour, IRaycastTarget
                 score = 8;
                 break;
         }
+        if (MirraSDK.Data.HasKey("score"))
+        {
+            score += MirraSDK.Data.GetInt("score");
+        }
+        MirraSDK.Data.SetInt("score", score);
         MirraSDK.Achievements.SetScore("score", score);
         onScoreChanged?.Invoke(score);
         StartCoroutine(FollowPath(path));
@@ -246,7 +256,7 @@ public class Bus : MonoBehaviour, IRaycastTarget
             _isClickable = true;
             transform.position = _initialPosition;
             transform.rotation = _initialRotation;
-            _fogEffect.SetActive(false);
+            //_fogEffect.SetActive(false);
         }
     }
 
@@ -303,7 +313,7 @@ public class Bus : MonoBehaviour, IRaycastTarget
         transform.position = _targetSpot.transform.position;
         transform.rotation = _targetSpot.transform.rotation;
         _parkingManager.BusArrived(this);
-        _fogEffect.SetActive(false);
+        //_fogEffect.SetActive(false);
     }
     
     private IEnumerator FollowPath(List<Vector3> waypoints)
@@ -333,14 +343,14 @@ public class Bus : MonoBehaviour, IRaycastTarget
         //     return;
         // }
         if (!_isClickable) return;
-
+        AdManager.instance.OnPlayerAction();
         _targetSpot = _parkingManager.GetAvailableSpot();
         SoundManager.instance.PlayClickOnBusSound();
         if (_targetSpot != null)
         {
             _rigidbody.mass = 1;
             _isMovingForward = true;
-            _fogEffect.SetActive(true);
+            //_fogEffect.SetActive(true);
             _rigidbody.isKinematic = false;
             _isClickable = false;
         }

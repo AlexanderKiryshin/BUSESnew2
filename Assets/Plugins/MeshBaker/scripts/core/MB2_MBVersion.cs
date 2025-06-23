@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace DigitalOpus.MB.Core{
 
-	public interface MBVersionInterface{
+    public interface MBVersionInterface{
 		string version();
 		int GetMajorVersion();
 		int GetMinorVersion();
@@ -21,7 +21,7 @@ namespace DigitalOpus.MB.Core{
         void MeshClear(Mesh m, bool t);
         void MeshAssignUVChannel(int channel, Mesh m, Vector2[] uvs);
         Vector4 GetLightmapTilingOffset(Renderer r);
-		Transform[] GetBones(Renderer r);
+		Transform[] GetBones(Renderer r, bool isSkinnedMeshWithBones);
         void OptimizeMesh(Mesh m);
         int GetBlendShapeFrameCount(Mesh m, int shapeIndex);
         float GetBlendShapeFrameWeight(Mesh m, int shapeIndex, int frameIndex);
@@ -34,11 +34,30 @@ namespace DigitalOpus.MB.Core{
 
         bool IsTextureReadable(Texture2D tex);
         bool CollectPropertyNames(List<ShaderTextureProperty> texPropertyNames, ShaderTextureProperty[] shaderTexPropertyNames, List<ShaderTextureProperty> _customShaderPropNames, Material resultMaterial, MB2_LogLevel LOG_LEVEL);
+
+        void DoSpecialRenderPipeline_TexturePackerFastSetup(GameObject cameraGameObject);
+
+        ColorSpace GetProjectColorSpace();
+
+        MBVersion.PipelineType DetectPipeline();
+
+        string UnescapeURL(string url);
     }
 
-	public class MBVersion
+    public class MBVersion
 	{
-		private static MBVersionInterface _MBVersion;
+
+        public const string MB_USING_HDRP = "MB_USING_HDRP";
+
+        public enum PipelineType
+        {
+            Unsupported,
+            Default,
+            URP,
+            HDRP
+        }
+
+        private static MBVersionInterface _MBVersion;
 
 		private static MBVersionInterface _CreateMBVersionConcrete(){
 			Type vit = null;
@@ -111,9 +130,10 @@ namespace DigitalOpus.MB.Core{
 			return _MBVersion.GetLightmapTilingOffset(r);
 		}
 
-		public static Transform[] GetBones(Renderer r){
+		public static Transform[] GetBones(Renderer r, bool isSkinnedMeshWithBones)
+        {
 			if (_MBVersion == null) _MBVersion = _CreateMBVersionConcrete();
-			return _MBVersion.GetBones(r);
+			return _MBVersion.GetBones(r, isSkinnedMeshWithBones);
 		}
 
         public static void OptimizeMesh(Mesh m)
@@ -180,6 +200,30 @@ namespace DigitalOpus.MB.Core{
         {
             if (_MBVersion == null) _MBVersion = _CreateMBVersionConcrete();
             _MBVersion.CollectPropertyNames(texPropertyNames, shaderTexPropertyNames, _customShaderPropNames, resultMaterial, LOG_LEVEL);
+        }
+
+        internal static void DoSpecialRenderPipeline_TexturePackerFastSetup(GameObject cameraGameObject)
+        {
+            if (_MBVersion == null) _MBVersion = _CreateMBVersionConcrete();
+            _MBVersion.DoSpecialRenderPipeline_TexturePackerFastSetup(cameraGameObject);
+        }
+
+        internal static ColorSpace GetProjectColorSpace()
+        {
+            if (_MBVersion == null) _MBVersion = _CreateMBVersionConcrete();
+            return _MBVersion.GetProjectColorSpace();
+        }
+
+        public static PipelineType DetectPipeline()
+        {
+            if (_MBVersion == null) _MBVersion = _CreateMBVersionConcrete();
+            return _MBVersion.DetectPipeline();
+        }
+
+        public static string UnescapeURL(string url)
+        {
+            if (_MBVersion == null) _MBVersion = _CreateMBVersionConcrete();
+            return _MBVersion.UnescapeURL(url);
         }
     }
 }

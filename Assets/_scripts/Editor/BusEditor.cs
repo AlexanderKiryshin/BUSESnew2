@@ -22,5 +22,9 @@ public class BusEditor : Editor
         {
             generator.Rotate90();
         }
+        if (GUILayout.Button("Rotate45"))
+        {
+            generator.Rotate45();
+        }
     }
 }

@@ -6,26 +6,31 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
+#if MB_USING_HDRP && UNITY_2019_3_OR_NEWER
+    using UnityEngine.Rendering.HighDefinition;
+#elif MB_USING_HDRP && UNITY_2018_4_OR_NEWER
+    using UnityEngine.Experimental.Rendering.HDPipeline;
+#endif
+
 namespace DigitalOpus.MB.Core
 {
-
     public class MBVersionConcrete : MBVersionInterface
     {
         public string version()
         {
-            return "3.29.1";
+            return "3.32.0";
         }
 
         public int GetMajorVersion()
         {
             /*
-            #if UNITY_3_0 || UNITY_3_0_0 || UNITY_3_1 || UNITY_3_2 || UNITY_3_3 || UNITY_3_4 || UNITY_3_5
+#if UNITY_3_0 || UNITY_3_0_0 || UNITY_3_1 || UNITY_3_2 || UNITY_3_3 || UNITY_3_4 || UNITY_3_5
                         return 3;
-            #elif UNITY_4_0 || UNITY_4_0_1 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6 || UNITY_4_7
+#elif UNITY_4_0 || UNITY_4_0_1 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6 || UNITY_4_7
                         return 4;
-            #else
+#else
                         return 5;
-            #endif
+#endif
             */
             string v = Application.unityVersion;
             String[] vs = v.Split(new char[] { '.' });
@@ -35,36 +40,35 @@ namespace DigitalOpus.MB.Core
         public int GetMinorVersion()
         {
             /*
-            #if UNITY_3_0 || UNITY_3_0_0 
+#if UNITY_3_0 || UNITY_3_0_0
             return 0;
-            #elif UNITY_3_1 
+#elif UNITY_3_1
             return 1;
-            #elif UNITY_3_2 
+#elif UNITY_3_2
             return 2;
-            #elif UNITY_3_3 
+#elif UNITY_3_3
             return 3;
-            #elif UNITY_3_4 
+#elif UNITY_3_4
             return 4;
-            #elif UNITY_3_5
+#elif UNITY_3_5
             return 5;
-            #elif UNITY_4_0 || UNITY_4_0_1
+#elif UNITY_4_0 || UNITY_4_0_1
             return 0;
-            #elif UNITY_4_1
+#elif UNITY_4_1
             return 1;
-            #elif UNITY_4_2
+#elif UNITY_4_2
             return 2;
-            #elif UNITY_4_3
+#elif UNITY_4_3
             return 3;
-            #elif UNITY_4_4
+#elif UNITY_4_4
             return 4;
-            #elif UNITY_4_5
+#elif UNITY_4_5
             return 5;
-            #else
+#else
             return 0;
-            #endif
+#endif
             */
-            string v = Application.unityVersion;
-            String[] vs = v.Split(new char[] { '.' });
+            string v = Application.unityVersion;     String[] vs = v.Split(new char[] { '.' });
             return Int32.Parse(vs[1]);
         }
 
@@ -254,7 +258,7 @@ namespace DigitalOpus.MB.Core
 #endif
         }
 #if UNITY_5_OR_NEWER
-        public Transform[] GetBones(Renderer r)
+        public Transform[] GetBones(Renderer r, bool isSkinnedMeshWithBones)
         {
             if (r is SkinnedMeshRenderer)
             {
@@ -306,9 +310,9 @@ namespace DigitalOpus.MB.Core
             }
         }
 #else
-        public Transform[] GetBones(Renderer r)
+        public Transform[] GetBones(Renderer r, bool isSkinnedMeshWithBones)
         {
-            if (r is SkinnedMeshRenderer)
+            if (isSkinnedMeshWithBones)
             {
                 Transform[] bone = ((SkinnedMeshRenderer)r).bones;
 #if UNITY_EDITOR
@@ -320,7 +324,8 @@ namespace DigitalOpus.MB.Core
 #endif
                 return bone;
             }
-            else if (r is MeshRenderer)
+            else if (r is MeshRenderer ||
+                (r is SkinnedMeshRenderer && !isSkinnedMeshWithBones))
             {
                 Transform[] bone = new Transform[1];
                 bone[0] = r.transform;
@@ -444,7 +449,61 @@ namespace DigitalOpus.MB.Core
 
         public bool CollectPropertyNames(List<ShaderTextureProperty> texPropertyNames, ShaderTextureProperty[] shaderTexPropertyNames, List<ShaderTextureProperty> _customShaderPropNames, Material resultMaterial, MB2_LogLevel LOG_LEVEL)
         {
-#if UNITY_2018_3_OR_NEWER
+#if UNITY_2019_3_OR_NEWER
+            // 2018.2 and up
+            // Collect the property names from the shader
+            // Check with the lists of property names to flag which ones are normal maps.
+            if (resultMaterial != null && resultMaterial.shader != null)
+            {
+                Shader s = resultMaterial.shader;
+
+                for (int i = 0; i < s.GetPropertyCount(); i++)
+                {
+                    if (s.GetPropertyType(i) == UnityEngine.Rendering.ShaderPropertyType.Texture)
+                    {
+                        string matPropName = s.GetPropertyName(i);
+                        if (resultMaterial.GetTextureOffset(matPropName) != new Vector2(0f, 0f))
+                        {
+                            if (LOG_LEVEL >= MB2_LogLevel.warn) Debug.LogWarning("Result material has non-zero offset for property " + matPropName + ". This is probably incorrect.");
+                        }
+
+                        if (resultMaterial.GetTextureScale(matPropName) != new Vector2(1f, 1f))
+                        {
+                            if (LOG_LEVEL >= MB2_LogLevel.warn) Debug.LogWarning("Result material should probably have tiling of 1,1 for propert " + matPropName);
+                        }
+
+                        ShaderTextureProperty pn = null;
+                        // We need to know if the property is a normal map or not.
+                        // first check the list of default names
+                        for (int defaultIdx = 0; defaultIdx < shaderTexPropertyNames.Length; defaultIdx++)
+                        {
+                            if (shaderTexPropertyNames[defaultIdx].name == matPropName)
+                            {
+                                pn = new ShaderTextureProperty(matPropName, shaderTexPropertyNames[defaultIdx].isNormalMap);
+                            }
+                        }
+
+                        // now check the list of custom property names
+                        for (int custPropIdx = 0; custPropIdx < _customShaderPropNames.Count; custPropIdx++)
+                        {
+                            if (_customShaderPropNames[custPropIdx].name == matPropName)
+                            {
+                                pn = new ShaderTextureProperty(matPropName, _customShaderPropNames[custPropIdx].isNormalMap);
+                            }
+                        }
+
+                        if (pn == null)
+                        {
+                            pn = new ShaderTextureProperty(matPropName, false, true);
+                        }
+
+                        texPropertyNames.Add(pn);
+                    }
+                }
+            }
+
+            return true;
+#elif UNITY_2018_3_OR_NEWER
             // 2018.2 and up
             // Collect the property names from the material
             // Check with the lists of property names to flag which ones are normal maps.
@@ -489,6 +548,7 @@ namespace DigitalOpus.MB.Core
 
                 texPropertyNames.Add(pn);
             }
+
             return true;
 #else
             { // Pre 2018.2, doesn't have API for querying material for property names.
@@ -533,6 +593,81 @@ namespace DigitalOpus.MB.Core
                 }
             }
             return true;
+#endif
+        }
+
+        public void DoSpecialRenderPipeline_TexturePackerFastSetup(GameObject cameraGameObject)
+        {
+            MBVersion.PipelineType pipelineType = DetectPipeline();
+#if MB_USING_HDRP && UNITY_2018_4_OR_NEWER
+            if (pipelineType != MBVersion.PipelineType.HDRP)
+            {
+                Debug.LogError("The 'PlayerSettings -> Other Settings -> Scripting Define Symbols' included the symbol 'MB_USING_HDRP' which should only be used " +
+                        "if the GraphicsSettings -> Render Pipeline Asset is HDRenderPipelineAsset. The Render Pipeline Asset is NOT HDRenderPipelineAsset. Please " +
+                        " remove the symbol MB_USING_HDRP from PlayerSettings -> Other Settings -> Scripting Define Symbols");
+            }
+            
+            HDAdditionalCameraData acd = cameraGameObject.GetComponent<HDAdditionalCameraData>();
+            if (acd == null)
+            {
+                acd = cameraGameObject.AddComponent<HDAdditionalCameraData>();
+            }
+
+            acd.volumeLayerMask = LayerMask.GetMask("UI");
+#endif
+        }
+
+        public ColorSpace GetProjectColorSpace()
+        {
+#if UNITY_EDITOR
+            if (Application.isEditor)
+            {
+                return UnityEditor.PlayerSettings.colorSpace;
+            }
+#endif
+            if (QualitySettings.desiredColorSpace != QualitySettings.activeColorSpace)
+            {
+                Debug.LogError("The active color space (" + QualitySettings.activeColorSpace + ") is not the desired color space (" + QualitySettings.desiredColorSpace + "). Baked atlases may be off.");
+            }
+
+            return QualitySettings.activeColorSpace;
+        }
+
+        public MBVersion.PipelineType DetectPipeline()
+        {
+#if UNITY_2019_1_OR_NEWER
+            if (UnityEngine.Rendering.GraphicsSettings.renderPipelineAsset != null)
+            {
+                // SRP
+                var srpType = UnityEngine.Rendering.GraphicsSettings.renderPipelineAsset.GetType().ToString();
+                if (srpType.Contains("HDRenderPipelineAsset"))
+                {
+                    return MBVersion.PipelineType.HDRP;
+                }
+                else if (srpType.Contains("UniversalRenderPipelineAsset") || srpType.Contains("LightweightRenderPipelineAsset"))
+                {
+                    return MBVersion.PipelineType.URP;
+                }
+                else return MBVersion.PipelineType.Unsupported;
+            }
+#elif UNITY_2017_1_OR_NEWER
+            if (UnityEngine.Rendering.GraphicsSettings.renderPipelineAsset != null) {
+                // SRP not supported before 2019
+                return MBVersion.PipelineType.Unsupported;
+            }
+#endif
+            // no SRP
+            return MBVersion.PipelineType.Default;
+        }
+
+        public string UnescapeURL(string url)
+        {
+#if UNITY_2017_3_OR_NEWER
+            return UnityEngine.Networking.UnityWebRequest.UnEscapeURL(url);
+#else
+            // Not correct but not going to spend a lot of effort writing custom
+            // code for versions of Unity soon to be depricated.
+            return url;
 #endif
         }
     }

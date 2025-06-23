@@ -40,11 +40,21 @@ namespace DigitalOpus.MB.Core
             return hasTexForProperty;
         }
 
+        static bool IsLinearProperty(List<ShaderTextureProperty> shaderPropertyNames, string shaderProperty)
+        {
+            for (int i = 0; i < shaderPropertyNames.Count; i++)
+            {
+                if (shaderPropertyNames[i].name == shaderProperty && shaderPropertyNames[i].isNormalMap) return true;
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Creates one texture array per texture property.
         /// </summary>
         /// <returns></returns>
-        internal static Texture2DArray[] CreateTextureArraysForResultMaterial(TexturePropertyData texPropertyData, MB_AtlasesAndRects[] resultAtlasesAndRectSlices,
+        internal static Texture2DArray[] CreateTextureArraysForResultMaterial(TexturePropertyData texPropertyData, List<ShaderTextureProperty> masterListOfTexProperties, MB_AtlasesAndRects[] resultAtlasesAndRectSlices,
             bool[] hasTexForProperty, MB3_TextureCombiner combiner, MB2_LogLevel LOG_LEVEL)
         {
             Debug.Assert(texPropertyData.sizes.Length == hasTexForProperty.Length);
@@ -58,31 +68,46 @@ namespace DigitalOpus.MB.Core
             for (int propIdx = 0; propIdx < texPropertyNames.Length; propIdx++)
             {
                 if (!hasTexForProperty[propIdx]) continue;
-
+                string propName = texPropertyNames[propIdx];
                 int numSlices = resultAtlasesAndRectSlices.Length;
                 int w = (int)texPropertyData.sizes[propIdx].x;
                 int h = (int)texPropertyData.sizes[propIdx].y;
                 int numMips = (int)texPropertyData.numMipMaps[propIdx];
                 TextureFormat format = texPropertyData.formats[propIdx];
                 bool doMipMaps = texPropertyData.doMips[propIdx];
-                Texture2DArray texArray = new Texture2DArray(w, h, numSlices, format, doMipMaps);
-                if (LOG_LEVEL >= MB2_LogLevel.info) Debug.LogFormat("Creating Texture2DArray for property: {0} w: {1} h: {2} format: {3} doMips: {4}", texPropertyNames[propIdx], w, h, format, doMipMaps);
+
+                Debug.Assert(QualitySettings.desiredColorSpace == QualitySettings.activeColorSpace, "Wanted to use color space " + QualitySettings.desiredColorSpace + " but the activeColorSpace was " + QualitySettings.activeColorSpace + " hardware may not support the desired color space.");
+
+                bool isLinear = MBVersion.GetProjectColorSpace() == ColorSpace.Linear;
+                {
+                    if (IsLinearProperty(masterListOfTexProperties, propName))
+                    {
+                        isLinear = true;
+                    } else
+                    {
+                        isLinear = false;
+                    }
+                }
+
+                Texture2DArray texArray = new Texture2DArray(w, h, numSlices, format, doMipMaps, isLinear);
+                if (LOG_LEVEL >= MB2_LogLevel.info) Debug.LogFormat("Creating Texture2DArray for property: {0} w: {1} h: {2} format: {3} doMips: {4} isLinear: {5}", propName, w, h, format, doMipMaps, isLinear);
                 for (int sliceIdx = 0; sliceIdx < numSlices; sliceIdx++)
                 {
                     Debug.Assert(resultAtlasesAndRectSlices[sliceIdx].atlases.Length == texPropertyNames.Length);
-                    Debug.Assert(resultAtlasesAndRectSlices[sliceIdx].texPropertyNames[propIdx] == texPropertyNames[propIdx]);
+                    Debug.Assert(resultAtlasesAndRectSlices[sliceIdx].texPropertyNames[propIdx] == propName);
                     Texture2D srcTex = resultAtlasesAndRectSlices[sliceIdx].atlases[propIdx];
 
                     if (LOG_LEVEL >= MB2_LogLevel.debug) Debug.LogFormat("Slice: {0}  texture: {1}", sliceIdx, srcTex);
                     bool isCopy = false;
                     if (srcTex == null)
                     {
+                        if (LOG_LEVEL >= MB2_LogLevel.trace) Debug.LogFormat("Texture is null for slice: {0} creating temporary texture", sliceIdx);
                         // Slices might not have all textures create a dummy if needed.
-                        srcTex = combiner._createTemporaryTexture(texPropertyNames[propIdx], w, h, format, doMipMaps);
+                        srcTex = combiner._createTemporaryTexture(propName, w, h, format, doMipMaps, isLinear);
                     }
 
-                    Debug.Assert(srcTex.width == texArray.width, "Source texture is not the same width as the texture array " + srcTex);
-                    Debug.Assert(srcTex.height == texArray.height, "Source texture is not the same height as the texture array " + srcTex);
+                    Debug.Assert(srcTex.width == texArray.width, "Source texture is not the same width as the texture array '" + srcTex + " srcWidth:" + srcTex.width + " texArrayWidth:" + texArray.width);
+                    Debug.Assert(srcTex.height == texArray.height, "Source texture is not the same height as the texture array " + srcTex + " srcWidth:" + srcTex.height + " texArrayWidth:" + texArray.height);
                     Debug.Assert(srcTex.mipmapCount == numMips, "Source texture does have not the same number of mips as the texture array: " + srcTex + " numMipsTex: " + srcTex.mipmapCount + " numMipsTexArray: " + numMips + " texDims: " + srcTex.width + "x" + srcTex.height);
                     Debug.Assert(srcTex.format == format, "Formats should have been converted before this. Texture: " + srcTex + "Source: " + srcTex.format + " Targ: " + format);
 
@@ -144,12 +169,12 @@ namespace DigitalOpus.MB.Core
                             // Do this the horrible hard way. It is only possible to resize textures in TrueColor formats,
                             // And only possible to switch formats using the Texture importer.
                             // Create a resized temporary texture asset in ARGB32 format. Then set its texture format and reimport
-                            resultAtlasesAndRectSlices[sliceIdx].atlases[propIdx] = textureEditorMethods.CreateTemporaryAssetCopy(sliceTex, targetWidth, targetHeight, format, logLevel);
+                            resultAtlasesAndRectSlices[sliceIdx].atlases[propIdx] = textureEditorMethods.CreateTemporaryAssetCopy(textureShaderProperties[propIdx], sliceTex, targetWidth, targetHeight, format, logLevel);
                             createdTemporaryTextureAssets.Add(resultAtlasesAndRectSlices[sliceIdx].atlases[propIdx]);
                         }
                         else if (sliceTex.format != format)
                         {
-                            textureEditorMethods.AddTextureFormat(sliceTex, format, textureShaderProperties[propIdx].isNormalMap);
+                            textureEditorMethods.ConvertTextureFormat_PlatformOverride(sliceTex, format, textureShaderProperties[propIdx].isNormalMap);
                         }
                     }
                     else
@@ -208,7 +233,7 @@ namespace DigitalOpus.MB.Core
             }
         }
 
-        internal static IEnumerator _CreateAtlasesCoroutineSingleResultMaterial(int resMatIdx, 
+        public static IEnumerator _CreateAtlasesCoroutineSingleResultMaterial(int resMatIdx, 
                             MB_TextureArrayResultMaterial bakedMatsAndSlicesResMat, 
                             MB_MultiMaterialTexArray resMatConfig, 
                             List<GameObject> objsToMesh,
@@ -328,7 +353,7 @@ namespace DigitalOpus.MB.Core
                     MB_TextureArrays.TexturePropertyData texPropertyData = new MB_TextureArrays.TexturePropertyData();
                     MB_TextureArrays.FindBestSizeAndMipCountAndFormatForTextureArrays(texPropertyNames, combiner.maxAtlasSize, textureArrayFormatSet, bakedMatsAndSlicesResMat.slices, texPropertyData);
 
-                    // Create textures we might need if they don't exist.
+                    // Create textures we might need to create if they don't exist.
                     {
                         for (int propIdx = 0; propIdx < hasTexForProperty.Length; propIdx++)
                         {
@@ -342,10 +367,12 @@ namespace DigitalOpus.MB.Core
                                 {
                                     if (bakedMatsAndSlicesResMat.slices[sliceIdx].atlases[propIdx] == null)
                                     {
-                                        Texture2D sliceTex = new Texture2D(targetWidth, targetHeight, format, texPropertyData.doMips[propIdx]);
+                                        // Can only setSolidColor on truecolor textures. First create a texture in trucolor format
+                                        Texture2D sliceTex = new Texture2D(targetWidth, targetHeight, TextureFormat.ARGB32, texPropertyData.doMips[propIdx]);
                                         Color col = textureBlender.GetColorForTemporaryTexture(resMatConfig.slices[sliceIdx].sourceMaterials[0].sourceMaterial, texPropertyNames[propIdx]);
                                         MB_Utility.setSolidColor(sliceTex, col);
-                                        bakedMatsAndSlicesResMat.slices[sliceIdx].atlases[propIdx] = editorMethods.CreateTemporaryAssetCopy(sliceTex, targetWidth, targetHeight, format, LOG_LEVEL);
+                                        // Now create a copy of this texture in target format.
+                                        bakedMatsAndSlicesResMat.slices[sliceIdx].atlases[propIdx] = editorMethods.CreateTemporaryAssetCopy(texPropertyNames[propIdx], sliceTex, targetWidth, targetHeight, format, LOG_LEVEL);
                                         temporaryTextureAssets.Add(bakedMatsAndSlicesResMat.slices[sliceIdx].atlases[propIdx]);
                                         MB_Utility.Destroy(sliceTex);
                                     }
@@ -358,11 +385,10 @@ namespace DigitalOpus.MB.Core
                     if (LOG_LEVEL >= MB2_LogLevel.debug) Debug.Log("Converting source textures to readable formats.");
                     if (MB_TextureArrays.ConvertTexturesToReadableFormat(texPropertyData, bakedMatsAndSlicesResMat.slices, hasTexForProperty, texPropertyNames, combiner, LOG_LEVEL, temporaryTextureAssets, editorMethods))
                     {
-
                         // We now have a set of slices (one per textureProperty). Build these into Texture2DArray's.
                         if (LOG_LEVEL >= MB2_LogLevel.debug) Debug.Log("Creating texture arrays");
                         if (LOG_LEVEL >= MB2_LogLevel.info) Debug.Log("THERE MAY BE ERRORS IN THE CONSOLE ABOUT 'Rebuilding mipmaps ... not supported'. THESE ARE PROBABLY FALSE POSITIVES AND CAN BE IGNORED.");
-                        Texture2DArray[] textureArrays = MB_TextureArrays.CreateTextureArraysForResultMaterial(texPropertyData, bakedMatsAndSlicesResMat.slices, hasTexForProperty, combiner, LOG_LEVEL);
+                        Texture2DArray[] textureArrays = MB_TextureArrays.CreateTextureArraysForResultMaterial(texPropertyData, texPropertyNames, bakedMatsAndSlicesResMat.slices, hasTexForProperty, combiner, LOG_LEVEL);
 
 
                         // Now have texture arrays for a result material, for all props. Save it.

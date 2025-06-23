@@ -1,6 +1,7 @@
 ﻿using Assets._scripts;
 using System;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class GameChecker : MonoBehaviour
@@ -11,6 +12,7 @@ public class GameChecker : MonoBehaviour
     [SerializeField] private ParkingManager _parkingManager;
     [SerializeField] private UiManager _uiManager;
     [SerializeField] private int maxBuses = 7;
+
     private int _busLeftCount;
     private int _personLeftCount;
     private Person _firstPerson;

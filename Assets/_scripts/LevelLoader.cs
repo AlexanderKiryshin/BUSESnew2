@@ -38,7 +38,7 @@ public class LevelLoader : MonoBehaviour
             AdManager.instance.ShowInterstitial();
         }*/
         SaveLevelsData();
-        Analytic.LevelStarted(_level.ToString());
+        Analytic.LevelStarted(_level);
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
     

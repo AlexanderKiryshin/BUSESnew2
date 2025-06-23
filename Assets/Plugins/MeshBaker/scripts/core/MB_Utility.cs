@@ -170,79 +170,81 @@ public class MB_Utility{
 
     public static bool hasOutOfBoundsUVs(Vector2[] uvs, Mesh m, ref MeshAnalysisResult putResultHere, int submeshIndex = -1)
     {
-            putResultHere.hasUVs = true;
-            if (uvs.Length == 0)
-            {
-                putResultHere.hasUVs = false;
-                putResultHere.hasOutOfBoundsUVs = false;
-                putResultHere.uvRect = new Rect();
-                return putResultHere.hasOutOfBoundsUVs;
-            }
-            float minx, miny, maxx, maxy;
-            if (submeshIndex >= m.subMeshCount)
-            {
-                putResultHere.hasOutOfBoundsUVs = false;
-                putResultHere.uvRect = new Rect();
-                return putResultHere.hasOutOfBoundsUVs;
-            }
-            else if (submeshIndex >= 0)
-            {
-                //checking specific submesh
-                int[] tris = m.GetTriangles(submeshIndex);
-                if (tris.Length == 0)
-                {
-                    putResultHere.hasOutOfBoundsUVs = false;
-                    putResultHere.uvRect = new Rect();
-                    return putResultHere.hasOutOfBoundsUVs;
-                }
-                minx = maxx = uvs[tris[0]].x;
-                miny = maxy = uvs[tris[0]].y;
-                for (int idx = 0; idx < tris.Length; idx++)
-                {
-                    int i = tris[idx];
-                    if (uvs[i].x < minx) minx = uvs[i].x;
-                    if (uvs[i].x > maxx) maxx = uvs[i].x;
-                    if (uvs[i].y < miny) miny = uvs[i].y;
-                    if (uvs[i].y > maxy) maxy = uvs[i].y;
-                }
-            }
-            else {
-                //checking all UVs
-                minx = maxx = uvs[0].x;
-                miny = maxy = uvs[0].y;
-                for (int i = 0; i < uvs.Length; i++)
-                {
-                    if (uvs[i].x < minx) minx = uvs[i].x;
-                    if (uvs[i].x > maxx) maxx = uvs[i].x;
-                    if (uvs[i].y < miny) miny = uvs[i].y;
-                    if (uvs[i].y > maxy) maxy = uvs[i].y;
-                }
-            }
-            Rect uvBounds = new Rect();
-            uvBounds.x = minx;
-            uvBounds.y = miny;
-            uvBounds.width = maxx - minx;
-            uvBounds.height = maxy - miny;
-            if (maxx > 1f || minx < 0f || maxy > 1f || miny < 0f)
-            {
-                putResultHere.hasOutOfBoundsUVs = true;
-            }
-            else
-            {
-                putResultHere.hasOutOfBoundsUVs = false;
-            }
-            putResultHere.uvRect = uvBounds;
+        putResultHere.hasUVs = true;
+        if (uvs.Length == 0)
+        {
+            putResultHere.hasUVs = false;
+            putResultHere.hasOutOfBoundsUVs = false;
+            putResultHere.uvRect = new Rect();
             return putResultHere.hasOutOfBoundsUVs;
         }
+        float minx, miny, maxx, maxy;
+        if (submeshIndex >= m.subMeshCount)
+        {
+            putResultHere.hasOutOfBoundsUVs = false;
+            putResultHere.uvRect = new Rect();
+            return putResultHere.hasOutOfBoundsUVs;
+        }
+        else if (submeshIndex >= 0)
+        {
+            //checking specific submesh
+            int[] tris = m.GetTriangles(submeshIndex);
+            if (tris.Length == 0)
+            {
+                putResultHere.hasOutOfBoundsUVs = false;
+                putResultHere.uvRect = new Rect();
+                return putResultHere.hasOutOfBoundsUVs;
+            }
+            minx = maxx = uvs[tris[0]].x;
+            miny = maxy = uvs[tris[0]].y;
+            for (int idx = 0; idx < tris.Length; idx++)
+            {
+                int i = tris[idx];
+                if (uvs[i].x < minx) minx = uvs[i].x;
+                if (uvs[i].x > maxx) maxx = uvs[i].x;
+                if (uvs[i].y < miny) miny = uvs[i].y;
+                if (uvs[i].y > maxy) maxy = uvs[i].y;
+            }
+        }
+        else {
+            //checking all UVs
+            minx = maxx = uvs[0].x;
+            miny = maxy = uvs[0].y;
+            for (int i = 0; i < uvs.Length; i++)
+            {
+                if (uvs[i].x < minx) minx = uvs[i].x;
+                if (uvs[i].x > maxx) maxx = uvs[i].x;
+                if (uvs[i].y < miny) miny = uvs[i].y;
+                if (uvs[i].y > maxy) maxy = uvs[i].y;
+            }
+        }
+        Rect uvBounds = new Rect();
+        uvBounds.x = minx;
+        uvBounds.y = miny;
+        uvBounds.width = maxx - minx;
+        uvBounds.height = maxy - miny;
+        if (maxx > 1f || minx < 0f || maxy > 1f || miny < 0f)
+        {
+            putResultHere.hasOutOfBoundsUVs = true;
+        }
+        else
+        {
+            putResultHere.hasOutOfBoundsUVs = false;
+        }
+        putResultHere.uvRect = uvBounds;
+        return putResultHere.hasOutOfBoundsUVs;
+    }
 
-        public static void setSolidColor(Texture2D t, Color c){
-		Color[] cs = t.GetPixels();
-		for (int i = 0; i < cs.Length; i++){
-			cs[i] = c;	
-		}
-		t.SetPixels(cs);
-		t.Apply();
-	}
+    public static void setSolidColor(Texture2D t, Color c)
+    {
+        Color[] cs = t.GetPixels();
+        for (int i = 0; i < cs.Length; i++)
+        {
+            cs[i] = c;
+        }
+        t.SetPixels(cs);
+        t.Apply();
+    }
 	
 	public static Texture2D resampleTexture(Texture2D source, int newWidth, int newHeight){
 		TextureFormat f = source.format;
@@ -409,5 +411,14 @@ public class MB_Utility{
             string aPth = Application.dataPath.Replace("Assets", "");
             return aPth + pth;
         }
-}
+
+		public static bool IsSceneInstance(GameObject go)
+		{
+			// go.scene.name 
+			//       - is the name of the scene if in a scene
+			//       - is the name of the prefab if in prefab edit scene
+			//       - is null if is a prefab assigned from the project folder
+			return go.scene.name != null;
+		}
+	}
 }
