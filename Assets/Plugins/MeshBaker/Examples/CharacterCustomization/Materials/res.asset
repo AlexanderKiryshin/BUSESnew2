@@ -15,130 +15,14 @@ MonoBehaviour:
   version: 3252
   resultType: 0
   materialsAndUVRects:
-  - material: {fileID: 2100000, guid: 7cce38ba40b7d05439de10ddde5afaf6, type: 2}
+  - material: {fileID: 2100000, guid: 83df962484e785f438feef86157b6e99, type: 2}
     atlasRect:
       serializedVersion: 2
-      x: 0.00048590865
-      y: 0
-      width: 0.24878523
-      height: 1
-    srcObjName: Building_BaberShop
-    textureArraySliceIdx: -1
-    allPropsUseSameTiling: 1
-    allPropsUseSameTiling_sourceMaterialTiling:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 1
-      height: 1
-    allPropsUseSameTiling_samplingEncapsulatinRect:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 1
-      height: 1
-    propsUseDifferntTiling_srcUVsamplingRect:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 0
-      height: 0
-    tilingTreatment: 3
-  - material: {fileID: 2100000, guid: 9415d5fbf987e4d47b3c90bea3a0d824, type: 2}
-    atlasRect:
-      serializedVersion: 2
-      x: 0.25024295
-      y: 0
-      width: 0.24878523
-      height: 1
-    srcObjName: SM_Env_Road_ParkingLines_01
-    textureArraySliceIdx: -1
-    allPropsUseSameTiling: 1
-    allPropsUseSameTiling_sourceMaterialTiling:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 1
-      height: 1
-    allPropsUseSameTiling_samplingEncapsulatinRect:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 1
-      height: 1
-    propsUseDifferntTiling_srcUVsamplingRect:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 0
-      height: 0
-    tilingTreatment: 3
-  - material: {fileID: 2100000, guid: 52dfe7c156ccca942abdb8f3eee56cb9, type: 2}
-    atlasRect:
-      serializedVersion: 2
-      x: 0.25024295
-      y: 0
-      width: 0.24878523
-      height: 1
-    srcObjName: SM_Env_Road_ParkingLines_01
-    textureArraySliceIdx: -1
-    allPropsUseSameTiling: 1
-    allPropsUseSameTiling_sourceMaterialTiling:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 1
-      height: 1
-    allPropsUseSameTiling_samplingEncapsulatinRect:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 1
-      height: 1
-    propsUseDifferntTiling_srcUVsamplingRect:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 0
-      height: 0
-    tilingTreatment: 3
-  - material: {fileID: 2100000, guid: 2191478c1f641c245b4fe9449817a0b7, type: 2}
-    atlasRect:
-      serializedVersion: 2
-      x: 0.5
-      y: 0
-      width: 0.24878523
-      height: 1
-    srcObjName: path_straight_mesh
-    textureArraySliceIdx: -1
-    allPropsUseSameTiling: 1
-    allPropsUseSameTiling_sourceMaterialTiling:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 1
-      height: 1
-    allPropsUseSameTiling_samplingEncapsulatinRect:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 1
-      height: 1
-    propsUseDifferntTiling_srcUVsamplingRect:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 0
-      height: 0
-    tilingTreatment: 3
-  - material: {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
-    atlasRect:
-      serializedVersion: 2
-      x: 0.74975705
-      y: 0.9885496
-      width: 0.00097181735
-      height: 0.007633588
-    srcObjName: SM_Env_Sidewalk_Straight_02
+      x: 0.7524414
+      y: 0.00048828125
+      width: 0.125
+      height: 0.125
+    srcObjName: tree_small_mesh_1
     textureArraySliceIdx: -1
     allPropsUseSameTiling: 1
     allPropsUseSameTiling_sourceMaterialTiling:
@@ -160,14 +44,101 @@ MonoBehaviour:
       width: 0
       height: 0
     tilingTreatment: 0
-  - material: {fileID: 2100000, guid: 83df962484e785f438feef86157b6e99, type: 2}
+  - material: {fileID: 2100000, guid: 7cce38ba40b7d05439de10ddde5afaf6, type: 2}
     atlasRect:
       serializedVersion: 2
-      x: 0.74975705
-      y: 0.003816794
-      width: 0.12439262
-      height: 0.97709924
-    srcObjName: bush_small_mesh
+      x: 0.50146484
+      y: 0.00048828125
+      width: 0.25
+      height: 0.25
+    srcObjName: Prop_Tree_03
+    textureArraySliceIdx: -1
+    allPropsUseSameTiling: 1
+    allPropsUseSameTiling_sourceMaterialTiling:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    allPropsUseSameTiling_samplingEncapsulatinRect:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    propsUseDifferntTiling_srcUVsamplingRect:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 0
+      height: 0
+    tilingTreatment: 0
+  - material: {fileID: 2100000, guid: 9415d5fbf987e4d47b3c90bea3a0d824, type: 2}
+    atlasRect:
+      serializedVersion: 2
+      x: 0.00048828125
+      y: 0.50146484
+      width: 0.25
+      height: 0.25
+    srcObjName: SM_Env_Road_ParkingLines_01
+    textureArraySliceIdx: -1
+    allPropsUseSameTiling: 1
+    allPropsUseSameTiling_sourceMaterialTiling:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    allPropsUseSameTiling_samplingEncapsulatinRect:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    propsUseDifferntTiling_srcUVsamplingRect:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 0
+      height: 0
+    tilingTreatment: 0
+  - material: {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+    atlasRect:
+      serializedVersion: 2
+      x: 0.87841797
+      y: 0.00048828125
+      width: 0.0009765625
+      height: 0.0009765625
+    srcObjName: SM_Env_Sidewalk_Straight_06
+    textureArraySliceIdx: -1
+    allPropsUseSameTiling: 1
+    allPropsUseSameTiling_sourceMaterialTiling:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    allPropsUseSameTiling_samplingEncapsulatinRect:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    propsUseDifferntTiling_srcUVsamplingRect:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 0
+      height: 0
+    tilingTreatment: 0
+  - material: {fileID: 2100000, guid: 62e25ef75a2216f418d06453c9ad15cb, type: 2}
+    atlasRect:
+      serializedVersion: 2
+      x: 0.00048828125
+      y: 0.00048828125
+      width: 0.5
+      height: 0.5
+    srcObjName: SM_Env_Sidewalk_Merger_02
     textureArraySliceIdx: -1
     allPropsUseSameTiling: 1
     allPropsUseSameTiling_sourceMaterialTiling:
@@ -192,11 +163,11 @@ MonoBehaviour:
   - material: {fileID: 2100000, guid: 3e979b3745b4a024bbbd5806d425fa75, type: 2}
     atlasRect:
       serializedVersion: 2
-      x: 0.8751215
-      y: 0.003816794
-      width: 0.12439262
-      height: 0.97709924
-    srcObjName: fence_long_mesh
+      x: 0.50146484
+      y: 0.25146484
+      width: 0.125
+      height: 0.125
+    srcObjName: lamp_mesh
     textureArraySliceIdx: -1
     allPropsUseSameTiling: 1
     allPropsUseSameTiling_sourceMaterialTiling:
@@ -222,12 +193,11 @@ MonoBehaviour:
   - combinedMaterial: {fileID: 2100000, guid: df570e7509275fc47bd7c37e745655c0, type: 2}
     considerMeshUVs: 0
     sourceMaterials:
+    - {fileID: 2100000, guid: 83df962484e785f438feef86157b6e99, type: 2}
     - {fileID: 2100000, guid: 7cce38ba40b7d05439de10ddde5afaf6, type: 2}
     - {fileID: 2100000, guid: 9415d5fbf987e4d47b3c90bea3a0d824, type: 2}
-    - {fileID: 2100000, guid: 52dfe7c156ccca942abdb8f3eee56cb9, type: 2}
-    - {fileID: 2100000, guid: 2191478c1f641c245b4fe9449817a0b7, type: 2}
     - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
-    - {fileID: 2100000, guid: 83df962484e785f438feef86157b6e99, type: 2}
+    - {fileID: 2100000, guid: 62e25ef75a2216f418d06453c9ad15cb, type: 2}
     - {fileID: 2100000, guid: 3e979b3745b4a024bbbd5806d425fa75, type: 2}
   resultMaterialsTexArray: []
   doMultiMaterial: 0
