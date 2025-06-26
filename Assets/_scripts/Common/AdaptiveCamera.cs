@@ -20,11 +20,6 @@ public class AdaptiveCamera : MonoBehaviour
             Debug.LogError("Этот скрипт должен быть прикреплен к ортографической камере!");
             enabled = false;
         }
-
-        if (MirraSDK.Device.IsMobile)
-        {
-            enabled = false;
-        }
     }
 
     void Update()
