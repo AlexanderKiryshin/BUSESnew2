@@ -455,4 +455,141 @@ public class BusGenerator : MonoBehaviour
             _busLoader.SaveBusData(_busData);
     }
 
+    public void GenerateSolvablePuzzle()
+    {
+        ClearBusesList();
+        List<(Bus prefab, int count, Vector3 size)> busTypes = new List<(Bus, int, Vector3)>
+        {
+            (smallBusPrefab, smallBusCount, SmallBusSize),
+            (mediumBusPrefab, mediumBusCount, MediumBusSize),
+            (largeBusPrefab, largeBusCount, LargeBusSize)
+        };
+
+        // Сначала внутренняя зона, потом внешние
+        for (int zoneIndex = 0; zoneIndex < areas.Count; zoneIndex++)
+        {
+            foreach (var (busPrefab, count, busSize) in busTypes)
+            {
+                int placed = 0;
+                int maxAttempts = 10;
+                int attempts = 0;
+                Bus bus = null;
+                while (placed < count && attempts < maxAttempts)
+                {
+                    float rotation = GetRandomRotationForZone(zoneIndex);
+                    Vector2 pos2D = GetRandomPositionInArea(areas[zoneIndex], busSize, rotation, _stepSize);
+                    if (pos2D == Vector2.zero)
+                    {
+                        attempts++;
+                        continue;
+                    }
+
+                    Vector3 pos = new Vector3(pos2D.x, 0, pos2D.y);
+                    if (bus == null)
+                    {
+                        bus = Instantiate(busPrefab, pos, Quaternion.Euler(0, rotation, 0));
+                    }
+                    AllBuses.Add(bus);
+                    bus.meshRendererBody.materials[0] = Materials[zoneIndex];
+                    AddBusToZoneList(bus, zoneIndex);
+
+                    if (IsPuzzleSolvable())
+                    {
+                        placed++;
+                    }
+                    else
+                    {
+                        // Удаляем автобус, если он мешает решению
+                        RemoveBusFromZones(bus);
+                        AllBuses.Remove(bus);
+                        DestroyImmediate(bus.gameObject);
+                    }
+                    attempts++;
+                }
+                if (placed < count)
+                {
+                    Debug.LogError($"Не удалось разместить {count} автобусов типа {busPrefab.name} в зоне {zoneIndex + 1}");
+                }
+            }
+        }
+    }
+
+    private float GetRandomRotationForZone(int zoneIndex)
+    {
+        // Здесь можно сделать более гибко, если нужно
+        if (_rotations != null && _rotations.Length > 0)
+            return _rotations[Random.Range(0, _rotations.Length)];
+        return _startRotation;
+    }
+
+    private void AddBusToZoneList(Bus bus, int zoneIndex)
+    {
+        switch (zoneIndex)
+        {
+            case 0: BusesInFirstArea.Add(bus); break;
+            case 1: BusesInSecondArea.Add(bus); break;
+            case 2: BusesInThirdArea.Add(bus); break;
+        }
+    }
+
+    // Проверка решаемости: можно ли убрать все автобусы по одному, если остальные стоят на месте
+    private bool IsPuzzleSolvable()
+    {
+        // Копируем список автобусов
+        List<Bus> busesCopy = new List<Bus>(AllBuses);
+        HashSet<Bus> removed = new HashSet<Bus>();
+
+        while (busesCopy.Count > 0)
+        {
+            bool found = false;
+            foreach (var bus in busesCopy)
+            {
+                if (CanBusExit(bus, busesCopy))
+                {
+                    removed.Add(bus);
+                    busesCopy.Remove(bus);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+                return false; // Остались заблокированные автобусы
+        }
+        return true;
+    }
+
+    // Проверка: может ли автобус уехать из зоны (нет ли на пути других автобусов)
+    private bool CanBusExit(Bus bus, List<Bus> allBuses)
+    {
+        // Здесь предполагается, что автобус едет по своей оси вперёд до выхода за пределы всех зон
+        // Можно реализовать через Raycast или проверку коллизий с другими автобусами
+        Vector3 dir = bus.transform.forward;
+        Vector3 pos = bus.transform.position;
+        float maxDistance = 100f; // Достаточно, чтобы выехать за пределы
+
+        Ray ray = new Ray(pos, dir);
+        foreach (var other in allBuses)
+        {
+            if (other == bus) continue;
+            // Проверяем, пересекает ли луч коллайдер другого автобуса
+            Collider col = other.GetComponent<Collider>();
+            if (col != null && col.bounds.IntersectRay(ray))
+            {
+                // На пути есть другой автобус
+                return false;
+            }
+        }
+        // Проверяем, выйдет ли автобус за пределы всех зон
+        Vector3 exitPoint = pos + dir * maxDistance;
+        bool outside = true;
+        foreach (var area in areas)
+        {
+            if (area.Contains(new Vector2(exitPoint.x, exitPoint.z)))
+            {
+                outside = false;
+                break;
+            }
+        }
+        return outside;
+    }
 }
