@@ -8,6 +8,9 @@ public class ParkingManager : MonoBehaviour
 {
     [SerializeField] private PersonLoader _personLoader;
     [SerializeField] private UiManager _uiManager;
+    public Transform _leftBottomPoint;
+    public Transform _leftMiddlePoint;
+    public Transform _leftUpPoint;
     public static ParkingManager instance = null;
     public Transform AwayPoint;
     public ParkingSpot[] parkingSpots;

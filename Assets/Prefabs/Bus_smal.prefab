@@ -698,7 +698,6 @@ GameObject:
   - component: {fileID: -1303614966051907189}
   - component: {fileID: 3018034806409371963}
   - component: {fileID: 2371320173364143451}
-  - component: {fileID: 5146492948876170621}
   m_Layer: 11
   m_Name: Bus_smal
   m_TagString: Bus
@@ -831,22 +830,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 1
---- !u!208 &5146492948876170621
-NavMeshObstacle:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7230713151610502074}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Shape: 1
-  m_Extents: {x: 0.5, y: 0.5, z: 1.15}
-  m_MoveThreshold: 0.1
-  m_Carve: 1
-  m_CarveOnlyStationary: 1
-  m_Center: {x: 0, y: 0.5, z: -0.1}
-  m_TimeToStationary: 0.5
 --- !u!1 &7364882452529466382
 GameObject:
   m_ObjectHideFlags: 0

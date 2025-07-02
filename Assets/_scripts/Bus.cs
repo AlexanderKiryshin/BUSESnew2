@@ -286,6 +286,7 @@ public class Bus : MonoBehaviour, IRaycastTarget
                 _rigidbody.velocity = Vector3.zero;
                 _rigidbody.angularVelocity = Vector3.zero;
                 StartFollowToParking();
+                //StartCoroutine(StartFollowParkingCoroutine());
             }
             else
             {
@@ -295,6 +296,27 @@ public class Bus : MonoBehaviour, IRaycastTarget
         }
     }
 
+    private IEnumerator StartFollowParkingCoroutine()
+    {
+        _collider.enabled = false;
+        _rigidbody.isKinematic = true;
+        _navAgent.enabled = true;
+        _parkingManager.MarkSpotOccupied(_targetSpot, this);
+        if (transform.position.z< _parkingManager._leftMiddlePoint.position.z)
+        {
+            _navAgent.SetDestination(_parkingManager._leftBottomPoint.position);
+            yield return _navAgent.enabled && _navAgent.remainingDistance <= _navAgent.stoppingDistance && !_navAgent.pathPending;
+        }
+
+        if (transform.position.z < _parkingManager._leftUpPoint.position.z)
+        {
+            _navAgent.SetDestination(_parkingManager._leftMiddlePoint.position);
+            yield return _navAgent.enabled && _navAgent.remainingDistance <= _navAgent.stoppingDistance && !_navAgent.pathPending;
+        }
+        _navAgent.SetDestination(_parkingManager._leftUpPoint.position);
+        yield return _navAgent.enabled && _navAgent.remainingDistance <= _navAgent.stoppingDistance && !_navAgent.pathPending;
+        _navAgent.SetDestination(_targetSpot.transform.position);
+    }
     private void StartFollowToParking()
     {
         _collider.enabled = false;
