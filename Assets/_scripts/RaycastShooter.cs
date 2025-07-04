@@ -13,6 +13,8 @@ namespace _scripts
         private EventSystem eventSystem;
         private GraphicRaycaster graphicRaycaster;
         private bool _isVipChoise = false;
+        private float _time;
+        private bool _touchIsBegan;
 
 
         void Start()
@@ -24,20 +26,46 @@ namespace _scripts
 
         void Update()
         {
+            if (_touchIsBegan)
+            {
+                _time += Time.deltaTime;
+            }
             if (Input.touchCount > 0)
             {
                 Touch touch = Input.GetTouch(0);
 
                 if (touch.phase == TouchPhase.Began)
                 {
-                    ShootRaycast(touch.position);
+                    _touchIsBegan = true;                   
+                    //ShootRaycast(touch.position);
+                }
+                if (touch.phase == TouchPhase.Ended)
+                {
+                    if (_time <0.5f)
+                    {
+                        ShootRaycast(touch.position);
+                    }
+                    _touchIsBegan = false;
+                    _time = 0;
                 }
             }
             else if (Input.GetMouseButtonDown(0))
             {
-                ShootRaycast(Input.mousePosition);
+                _touchIsBegan = true;
+                //ShootRaycast(Input.mousePosition);
+            }
+            else
+                if (Input.GetMouseButtonUp(0))
+            {
+                if (_time < 0.5f)
+                {
+                    ShootRaycast(Input.mousePosition);
+                }
+                _touchIsBegan = false;
+                _time = 0;
             }
         }
+
 
         void ShootRaycast(Vector2 screenPosition)
         {

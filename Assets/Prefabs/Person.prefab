@@ -48,7 +48,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _animator: {fileID: 5031235255391632032}
-  _speed: 20
+  _speed: 30
   _distanceThreshold: 0.6
   _viewTransform: {fileID: 2580407318747351687}
   meshRenderer: {fileID: 3928247963378817605}

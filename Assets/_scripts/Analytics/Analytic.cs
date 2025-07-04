@@ -1,4 +1,5 @@
 using MirraGames.SDK;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using YG;
@@ -94,22 +95,24 @@ public static class Analytic
         MirraSDK.Analytics.Report("bonus_used", eventParameters);
         YG2.MetricaSend("bonus_used", eventParameters);
     }
-    public static void LevelStarted(int level)
+    public static void LevelStarted(int level, int version)
     {
         Dictionary<string, object> eventParameters = new Dictionary<string, object>();
         eventParameters.Add("level", (level+1));
         eventParameters.Add("playtime", MirraSDK.Data.GetFloat("playtime"));
+        eventParameters.Add("version", version);
         MirraSDK.Analytics.Report("level_started",eventParameters);
         YG2.MetricaSend("level_started", eventParameters);
     }
 
-    public static void LevelCompleted(int level)
+    public static void LevelCompleted(int level,int version)
     {
         Dictionary<string, object> eventParameters = new Dictionary<string, object>();
         eventParameters.Add("level", (level + 1));     
         eventParameters.Add("playtime", MirraSDK.Data.GetFloat("playtime"));
         eventParameters.Add("interstitialCount", _interstitialCount);
         eventParameters.Add("rewardedCount", _rewardedCount);
+        eventParameters.Add("version", version);
         MirraSDK.Analytics.Report("level_completed", eventParameters);
         YG2.MetricaSend("level_complete",eventParameters);
         _interstitialCount = 0;

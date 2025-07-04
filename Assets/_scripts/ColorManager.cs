@@ -261,13 +261,16 @@ public class ColorManager : MonoBehaviour
             }
         }
 
-       /* var lastBus = buses[^1];
-        for (int i = 0; i < lastBus.Capacity; i++)
+        /* var lastBus = buses[^1];
+         for (int i = 0; i < lastBus.Capacity; i++)
+         {
+             var color = GeneratedColors.Where(color => color.GetColor(lastBus.Type) == lastBus.Color).First<ColorData>();
+             colorSequence.Add(new ColorData(color.colorType, lastBus.Type, lastBus.Color, color.peopleColor));
+         }*/
+        foreach (var color in colorSequence)
         {
-            var color = GeneratedColors.Where(color => color.GetColor(lastBus.Type) == lastBus.Color).First<ColorData>();
-            colorSequence.Add(new ColorData(color.colorType, lastBus.Type, lastBus.Color, color.peopleColor));
-        }*/
-
+            Debug.Log("people " + color.peopleColor + "  " + color.colorType);
+        }
         return colorSequence;
     }
 
@@ -340,7 +343,10 @@ public class ColorManager : MonoBehaviour
             var color = GeneratedColors.Where(color => color.GetColor(lastBus.Type) == lastBus.Color).First<ColorData>();
             colorSequence.Add(new ColorData(color.colorType,lastBus.Type, lastBus.Color, color.peopleColor));
         }*/
-
+        foreach (var color in colorSequence)
+        {
+            Debug.Log("people "+color.peopleColor+ "  "+color.colorType);
+        }
         return colorSequence;
     }
 

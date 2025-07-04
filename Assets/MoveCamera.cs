@@ -5,9 +5,8 @@ using UnityEngine.UI;
 
 public class MoveCamera : MonoBehaviour
 {
-    [Header("Границы движения (world space)")]
-    public Rect bounds = new Rect(-10, -10, 20, 20);   // x,y = левый‑нижний угол
-
+    public Vector2 xBounds;
+    public Vector2 yBounds;
     public Vector2 zBounds;
 
     [Header("Чувствительность перетаскивания")]
@@ -21,7 +20,19 @@ public class MoveCamera : MonoBehaviour
     [SerializeField] Button zoomIn;
     [SerializeField] Button zoomOut;
 
-    void Awake() => cam = GetComponent<Camera>();
+    void Awake()
+    {
+        cam = GetComponent<Camera>();
+        if (cam.orthographicSize <= minZoom)
+        {
+            zoomIn.interactable = false;
+        }
+        if (cam.orthographicSize >= maxZoom)
+        {
+            zoomOut.interactable = false;
+        }
+    }
+
 
     void Update()
     {
@@ -41,12 +52,12 @@ public class MoveCamera : MonoBehaviour
                 cam.ScreenToWorldPoint(new Vector3(0f, 0f, cam.nearClipPlane));
 
             // инвертируем, чтобы камера «следовала» за курсором
-            transform.position -= worldDelta * dragSensitivity;
+           // transform.position -= worldDelta * dragSensitivity;
 
             // жёсткое ограничение в пределах bounds
-            Vector3 pos = transform.position;
-            pos.x = Mathf.Clamp(pos.x, bounds.xMin, bounds.xMax);
-            pos.y = Mathf.Clamp(pos.y, bounds.yMin, bounds.yMax);
+            Vector3 pos = transform.position - worldDelta * dragSensitivity;
+            pos.x = Mathf.Clamp(pos.x, xBounds.x, xBounds.y);
+            pos.y = Mathf.Clamp(pos.y,yBounds.x, yBounds.y);
             pos.z = Mathf.Clamp(pos.z, zBounds.x, zBounds.y);
             transform.position = pos;
         }
@@ -58,7 +69,8 @@ public class MoveCamera : MonoBehaviour
         if (cam.orthographicSize>minZoom)
         {
             cam.orthographicSize -= zoomStep;
-            if (cam.orthographicSize < minZoom)
+            yBounds.y += zoomStep;
+            if (cam.orthographicSize <= minZoom)
             {
                 cam.orthographicSize = minZoom;
                 zoomIn.interactable = false;
@@ -72,20 +84,12 @@ public class MoveCamera : MonoBehaviour
         if (cam.orthographicSize < maxZoom)
         {
             cam.orthographicSize += zoomStep;
-            if (cam.orthographicSize > maxZoom)
+            yBounds.y -= zoomStep;
+            if (cam.orthographicSize >= maxZoom)
             {
                 cam.orthographicSize = maxZoom;
                 zoomOut.interactable = false;
             }
         }
     }
-
-#if UNITY_EDITOR
-    // визуализация прямоугольника в режиме Scene
-    void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireCube(bounds.center, new Vector3(bounds.width, bounds.height, 0f));
-    }
-#endif
 }

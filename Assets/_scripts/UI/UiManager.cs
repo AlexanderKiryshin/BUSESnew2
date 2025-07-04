@@ -308,7 +308,7 @@ public class UiManager : MonoBehaviour
 
     private void OnWinGame()
     {
-        Analytic.LevelCompleted(MirraSDK.Data.GetInt("Level"));
+        Analytic.LevelCompleted(MirraSDK.Data.GetInt("Level"),3);
         _completed.gameObject.SetActive(true);
         AdManager.instance.OnWindowEnabled(true);
     }
@@ -332,7 +332,7 @@ public class UiManager : MonoBehaviour
         {
             AdManager.instance.ShowInterstitial();
         }*/
-        Analytic.LevelStarted(MirraSDK.Data.GetInt("Level"));
+        Analytic.LevelStarted(MirraSDK.Data.GetInt("Level"),3);
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         AdManager.instance.OnWindowEnabled(false);
     }
